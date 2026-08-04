@@ -38,21 +38,22 @@ The ClusterLogForwarder CR defines which logs are collected. The collector (Vect
 
 16. The collector is deployed as a DaemonSet when collecting node-level logs (application, infrastructure, audit). `[GA]`
 17. The collector is deployed as a Deployment when acting as a receiver only (no node-level collection). `[GA]`
-18. Collector resource requests/limits (CPU, memory) are configurable via `spec.collector.resources`. `[GA]`
-19. Collector supports `nodeSelector`, `tolerations`, and `affinity` for scheduling. `[GA]` (affinity new in 6.3)
-20. Collector log level is configurable. `[GA]`
-21. Collector supports `maxUnavailable` for rolling update strategy. `[GA]`
-22. Collector supports `terminationGracePeriodSeconds`. `[GA]`
-23. Collector supports `networkPolicy` configuration. `[GA]`
-24. `managementState` can be set to `Unmanaged` to prevent the operator from reconciling the collector. `[GA]`
+18. The collector backend is selectable via `spec.collector.type`: `Vector` (default) or `OTELCollector`. When `OTELCollector` is selected, CLO creates an `OpenTelemetryCollector` CR and the OTEL Operator deploys the collector. `[PLANNED, TP]` See `what/collector-migration.md`.
+19. Collector resource requests/limits (CPU, memory) are configurable via `spec.collector.resources`. `[GA]`
+20. Collector supports `nodeSelector`, `tolerations`, and `affinity` for scheduling. `[GA]` (affinity new in 6.3)
+21. Collector log level is configurable. `[GA]`
+22. Collector supports `maxUnavailable` for rolling update strategy. `[GA]`
+23. Collector supports `terminationGracePeriodSeconds`. `[GA]`
+24. Collector supports `networkPolicy` configuration. `[GA]`
+25. `managementState` can be set to `Unmanaged` to prevent the operator from reconciling the collector. `[GA]`
 
 ### Log File Metric Exporter
 
-25. `LogFileMetricExporter` CR exposes Prometheus metrics about per-container log file sizes and rates. Deploys as a separate DaemonSet. `[GA]`
+26. `LogFileMetricExporter` CR exposes Prometheus metrics about per-container log file sizes and rates. Deploys as a separate DaemonSet. `[GA]`
 
 ### Kubernetes Event Router
 
-26. The Kubernetes Event Router watches for Kubernetes events and logs them to stdout, making them available for collection as container logs. `[GA]`
+27. The Kubernetes Event Router watches for Kubernetes events and logs them to stdout, making them available for collection as container logs. `[GA]`
 
 ## Configuration Surface
 
@@ -70,6 +71,7 @@ The ClusterLogForwarder CR defines which logs are collected. The collector (Vect
 | `spec.inputs[].audit.sources[]` | enum | all | `kubeAPI`, `openshiftAPI`, `auditd`, `ovn` |
 | `spec.inputs[].receiver.type` | enum | — | `http`, `syslog` |
 | `spec.inputs[].receiver.port` | int | — | Listen port (1024–65535) |
+| `spec.collector.type` | enum | `Vector` | Collector backend: `Vector` or `OTELCollector` `[PLANNED]` |
 | `spec.collector.resources` | ResourceRequirements | — | CPU/memory requests and limits |
 | `spec.collector.nodeSelector` | map | — | Node selector for collector pods |
 | `spec.collector.tolerations` | []Toleration | — | Tolerations for collector pods |

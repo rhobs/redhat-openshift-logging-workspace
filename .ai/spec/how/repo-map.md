@@ -25,6 +25,7 @@ Maps product concerns to the repositories and files that own them. Use this to q
 | OpenShift-specific Loki features | `loki/` | `operator/internal/manifests/openshift/` |
 | Loki storage backend config | `loki/` | `operator/internal/manifests/storage/` |
 | Loki OTLP config | `loki/` | `operator/internal/manifests/openshift/otlp/` |
+| OTEL Collector config generation `[PLANNED]` | `cluster-logging-operator/` | `internal/generator/otel/` |
 | Vector collector internals | `vector/` | `src/sources/`, `src/transforms/`, `src/sinks/` |
 | Vector configuration model | `vector/` | `src/config/`, `lib/vector-config/` |
 | Logging UI plugin frontend | `logging-view-plugin/` | `web/src/` |
@@ -48,3 +49,4 @@ Maps product concerns to the repositories and files that own them. Use this to q
 | Promoting TP → GA | `cluster-logging-operator/` or `loki/` (remove TP gates), `openshift-docs/` (update support status) |
 | Data model change | `cluster-logging-operator/` (data model), `logging-view-plugin/` (UI parsing), `openshift-docs/` (docs) |
 | Vector upstream update | `vector/` (upstream), `cluster-logging-operator/` (config generation may need updates) |
+| OTEL Collector backend `[PLANNED]` | `cluster-logging-operator/` (OTEL config generator), `opentelemetry-operator/` (reconciles generated CRs), `redhat-opentelemetry-collector/` (component selection) |

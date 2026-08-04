@@ -16,29 +16,31 @@ Red Hat OpenShift Logging 6.x provides cluster-level log collection, forwarding,
 5. **Red Hat OpenShift Logging Operator (CLO)** manages the `ClusterLogForwarder` CR to deploy and configure Vector-based log collectors. Installed in `openshift-logging` namespace. `[GA]`
 6. **Loki Operator** manages `LokiStack`, `AlertingRule`, `RecordingRule`, and `RulerConfig` CRs for log storage. Installed in `openshift-operators-redhat` namespace. `[GA]`
 7. **Cluster Observability Operator (COO)** deploys the Logging UI Plugin via the `UIPlugin` CR. COO itself is Technology Preview, but the Logging UI Plugin has a support exception making it GA for logging use on OCP 4.14+. `[TP with support exception]`
-8. **Vector** is the sole supported log collector implementation. `[GA]`
-9. **Fluentd** is deprecated — bug fixes only, no enhancements, planned removal. `[DEPRECATED]`
-10. **Kibana** is deprecated — planned removal. `[DEPRECATED]`
+8. **Vector** is the sole supported log collector implementation. `[GA]` `[PLANNED: replaced by OpenTelemetry Collector as default, see what/collector-migration.md]`
+9. **OpenTelemetry Collector** is available as an alternative collector backend when `spec.collector.type: OTELCollector` is set on the ClusterLogForwarder. Requires the OTEL Operator. `[PLANNED, TP]`
+10. **Fluentd** is deprecated — bug fixes only, no enhancements, planned removal. `[DEPRECATED]`
+11. **Kibana** is deprecated — planned removal. `[DEPRECATED]`
 
 ### Supported APIs
 
-11. `ClusterLogForwarder` (`observability.openshift.io/v1`) — primary API for log collection and forwarding. `[GA, since 6.0]`
-12. `LogFileMetricExporter` (`logging.openshift.io/v1alpha1`) — Prometheus metrics about log file volume. `[GA, since 5.8]`
-13. `LokiStack` (`loki.grafana.com/v1`) — managed Loki deployment. `[GA, since 5.5]`
-14. `AlertingRule` (`loki.grafana.com/v1`) — log-based alerting rules. `[GA, since 5.7]`
-15. `RecordingRule` (`loki.grafana.com/v1`) — log-based recording rules. `[GA, since 5.7]`
-16. `RulerConfig` (`loki.grafana.com/v1`) — Loki ruler configuration. `[GA, since 5.7]`
+12. `ClusterLogForwarder` (`observability.openshift.io/v1`) — primary API for log collection and forwarding. `[GA, since 6.0]`
+13. `LogFileMetricExporter` (`logging.openshift.io/v1alpha1`) — Prometheus metrics about log file volume. `[GA, since 5.8]`
+14. `LokiStack` (`loki.grafana.com/v1`) — managed Loki deployment. `[GA, since 5.5]`
+15. `AlertingRule` (`loki.grafana.com/v1`) — log-based alerting rules. `[GA, since 5.7]`
+16. `RecordingRule` (`loki.grafana.com/v1`) — log-based recording rules. `[GA, since 5.7]`
+17. `RulerConfig` (`loki.grafana.com/v1`) — Loki ruler configuration. `[GA, since 5.7]`
 
 ### Data Models
 
-17. **ViaQ** is the default data model used by all output types. `[GA]`
-18. **OpenTelemetry (OTEL)** data model is available for OTLP output and LokiStack output with `dataModel: Otel`. Requires Technology Preview annotation on the ClusterLogForwarder. `[TP]`
+18. **ViaQ** is the default data model used by all output types. `[GA]`
+19. **OpenTelemetry (OTEL)** data model is available for OTLP output and LokiStack output with `dataModel: Otel`. Requires Technology Preview annotation on the ClusterLogForwarder. `[TP]`
 
 ### Lifecycle
 
-19. Operators are installed via OLM (Operator Lifecycle Manager) from OperatorHub.
-20. CLO and Loki Operator can be installed independently — CLO does not require Loki Operator if forwarding to external destinations only.
-21. The Logging UI Plugin requires both the Loki Operator (for LokiStack) and COO (for UIPlugin CR).
+20. Operators are installed via OLM (Operator Lifecycle Manager) from OperatorHub.
+21. CLO and Loki Operator can be installed independently — CLO does not require Loki Operator if forwarding to external destinations only.
+22. The Logging UI Plugin requires both the Loki Operator (for LokiStack) and COO (for UIPlugin CR).
+23. When using the OTEL Collector backend, the OTEL Operator must also be installed. `[PLANNED]`
 
 ## Configuration Surface
 
@@ -56,7 +58,7 @@ Red Hat OpenShift Logging 6.x provides cluster-level log collection, forwarding,
 
 - Only one `ClusterLogForwarder` per namespace is expected. Multiple instances across different namespaces are supported for multi-tenant collection.
 - The `serviceAccount` field on `ClusterLogForwarder` is required — the operator uses RBAC on the SA to determine which log types (application, infrastructure, audit) the forwarder is authorized to collect.
-- Vector is the only collector; there is no pluggable collector interface.
+- Vector is the default collector. OpenTelemetry Collector is available as an alternative via `spec.collector.type`. `[PLANNED: see what/collector-migration.md]`
 - LokiStack requires object storage (S3, Azure Blob, GCS, Swift, or S3-compatible) — there is no local storage option for production.
 
 ## Planned Changes
@@ -66,3 +68,4 @@ Red Hat OpenShift Logging 6.x provides cluster-level log collection, forwarding,
 | — | Removal of Fluentd collector (deprecated) |
 | — | Removal of Kibana (deprecated) |
 | — | Removal of `azureMonitor` output type (Microsoft disabling Data Collector API September 2026) |
+| — | Migration from Vector to OpenTelemetry Collector (see `what/collector-migration.md`) |

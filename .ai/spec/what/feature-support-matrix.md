@@ -34,7 +34,8 @@ Authoritative reference for which features are supported and at what level. A fe
 
 | Feature | Status | Notes |
 |---|---|---|
-| Vector collector | GA | Only supported collector |
+| Vector collector | GA | Default collector |
+| OpenTelemetry Collector backend | PLANNED (TP) | Alternative collector via `spec.collector.type: OTELCollector`. See `what/collector-migration.md` |
 | Fluentd collector | DEPRECATED | Bug fixes only, planned removal |
 | Collector resource configuration | GA | CPU/memory requests and limits |
 | Collector node scheduling (nodeSelector, tolerations) | GA | |
