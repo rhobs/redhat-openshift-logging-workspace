@@ -13,7 +13,7 @@ Red Hat OpenShift Logging provides logging capabilities based for OpenShift. Thi
 | [loki](https://github.com/grafana/loki) | Loki backend with Kubernetes operator |
 | [redhat-openshift-logging-docs](https://github.com/openshift/openshift-docs/tree/standalone-logging-docs-main) | Documentation for the Red Hat OpenShift Logging |
 | [eventrouter](https://github.com/openshift/eventrouter) | Kubernetes event log exporter |
-| [log-file-metric-exporter](https://github.com/viaq/log-file-metric-exporter) | Log file metric exporter |
+| [log-file-metric-exporter](https://github.com/ViaQ/log-file-metric-exporter) | Prometheus exporter for pod log file byte volume; deployed by CLO as a DaemonSet |
 | [logging-ui-plugin](https://github.com/openshift/logging-view-plugin) | Logging OpenShift UI plugin |
 
 ## Cross-Repo Conventions

@@ -48,7 +48,7 @@ The ClusterLogForwarder CR defines which logs are collected. The collector (Vect
 
 ### Log File Metric Exporter
 
-25. `LogFileMetricExporter` CR exposes Prometheus metrics about per-container log file sizes and rates. Deploys as a separate DaemonSet. `[GA]`
+25. `LogFileMetricExporter` CR exposes Prometheus metrics about per-container log file volume. CLO reconciles the CR and deploys a separate DaemonSet running the exporter binary. The exporter's metric, label, flag, and auth contract is specified in `what/log-file-metric-exporter.md`. `[GA]`
 
 ### Kubernetes Event Router
 

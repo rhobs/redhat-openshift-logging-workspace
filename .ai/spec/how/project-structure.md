@@ -9,6 +9,7 @@ Red Hat OpenShift Logging is a multi-repo workspace. Each repository is an indep
 | `cluster-logging-operator/` | `openshift/cluster-logging-operator` | Go | ClusterLogForwarder controller, Vector config generation, collector deployment |
 | `loki/` | `grafana/loki` | Go | Upstream Loki + Loki Operator (LokiStack, AlertingRule, RecordingRule, RulerConfig) |
 | `vector/` | `vectordotdev/vector` | Rust | Upstream Vector collector (sources, transforms, sinks) |
+| `log-file-metric-exporter/` | `ViaQ/log-file-metric-exporter` | Go | Prometheus exporter binary that measures bytes written to pod log files; deployed by CLO as a DaemonSet |
 | `openshift-docs/` | `openshift/openshift-docs` (branch: `standalone-logging-docs-main`) | AsciiDoc | Product documentation — authoritative for supported features |
 | `logging-view-plugin/` | `openshift/logging-view-plugin` | TypeScript + Go | OpenShift Console logging plugin (UI) |
 | `.ai/spec/` | (workspace) | Markdown | Product specifications |

@@ -7,7 +7,12 @@ Maps product concerns to the repositories and files that own them. Use this to q
 | Concern | Primary Repo | Key Paths |
 |---|---|---|
 | ClusterLogForwarder API | `cluster-logging-operator/` | `api/observability/v1/` |
-| LogFileMetricExporter API | `cluster-logging-operator/` | `api/logging/v1alpha1/` |
+| LogFileMetricExporter API + controller | `cluster-logging-operator/` | `api/logging/v1alpha1/` |
+| Log file metric exporter binary (DaemonSet) | `log-file-metric-exporter/` | `cmd/main.go` |
+| Log file watching / byte counting | `log-file-metric-exporter/` | `pkg/logwatch/watcher.go` |
+| Symlink / log-rotation handling | `log-file-metric-exporter/` | `pkg/symnotify/symnotify.go` |
+| `log_logged_bytes_total` metric + labels | `log-file-metric-exporter/` | `pkg/logwatch/watcher.go` |
+| Exporter bearer-token auth | `log-file-metric-exporter/` | `pkg/auth/` |
 | Log collection logic | `cluster-logging-operator/` | `internal/controller/observability/` |
 | Vector config generation | `cluster-logging-operator/` | `internal/generator/vector/` |
 | Adding a new output type | `cluster-logging-operator/` | `api/observability/v1/output_types.go`, `internal/generator/vector/output/<type>/` |
@@ -48,3 +53,4 @@ Maps product concerns to the repositories and files that own them. Use this to q
 | Promoting TP → GA | `cluster-logging-operator/` or `loki/` (remove TP gates), `openshift-docs/` (update support status) |
 | Data model change | `cluster-logging-operator/` (data model), `logging-view-plugin/` (UI parsing), `openshift-docs/` (docs) |
 | Vector upstream update | `vector/` (upstream), `cluster-logging-operator/` (config generation may need updates) |
+| Exporter metric/label change | `log-file-metric-exporter/` (binary), `cluster-logging-operator/` (DaemonSet + scrape config), `openshift-docs/` (documentation) |
