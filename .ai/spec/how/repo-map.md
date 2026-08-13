@@ -31,6 +31,8 @@ Maps product concerns to the repositories and files that own them. Use this to q
 | Loki storage backend config | `loki/` | `operator/internal/manifests/storage/` |
 | Loki OTLP config | `loki/` | `operator/internal/manifests/openshift/otlp/` |
 | Vector collector internals | `vector/` | `src/sources/`, `src/transforms/`, `src/sinks/` |
+| Kubernetes event collection (eventrouter service) | `eventrouter/` | `main.go`, `eventrouter.go`, `sinks/` |
+| Eventrouter log normalization / ViaQ model | `cluster-logging-operator/` | `internal/generator/vector/filter/openshift/viaq/v1/normalize.go`, `internal/datamodels/viaq/v1/viaq.go` |
 | Vector configuration model | `vector/` | `src/config/`, `lib/vector-config/` |
 | Logging UI plugin frontend | `logging-view-plugin/` | `web/src/` |
 | Logging UI plugin backend | `logging-view-plugin/` | `cmd/`, `pkg/server/` |

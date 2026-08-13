@@ -12,7 +12,7 @@ graph LR
             INFRA["Infrastructure<br/>(kube-*, openshift-*)"]
             JOURNAL["Node Journal"]
             AUDIT["Audit Logs<br/>(kubeAPI, openshiftAPI,<br/>auditd, OVN)"]
-            EROUTER["Eventrouter<br/>(Deployment)"]
+            EVENTROUTER["Event Router<br/>(manual deploy)<br/>K8s Events → stdout"]
         end
 
         subgraph "Collection & Forwarding"
@@ -58,6 +58,7 @@ graph LR
     INFRA --> VECTOR
     JOURNAL --> VECTOR
     AUDIT --> VECTOR
+    EVENTROUTER -->|"stdout collected<br/>as infrastructure"| VECTOR
 
     VECTOR --> LOKISTACK
     VECTOR --> ES
@@ -79,6 +80,8 @@ graph LR
     UIPLUGIN --> CONSOLE
     UIPLUGIN -->|"queries"| LOKISTACK
 ```
+
+The **Event Router** is a standalone service that watches Kubernetes API events and writes them to stdout. It is deployed manually (not managed by the CLO) into an operations namespace such as `openshift-logging`, where the Vector collector picks up its output as infrastructure logs.
 
 ## Data Flow
 
