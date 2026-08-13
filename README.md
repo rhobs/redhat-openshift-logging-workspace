@@ -6,11 +6,13 @@ Cross-repo workspace for Red Hat OpenShift Logging — shared specs, routing, an
 
 | Repo                                                                                                           | Purpose                                                       |
 |----------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
-| [vector](https://github.com/vectordotdev/vector)                                                               | Vector collector                                              |
+| [vector](https://github.com/viaq/vector)                                                                       | Vector collector                                              |
 | [cluster-logging-operator](https://github.com/openshift/cluster-logging-operator)                              | Cluster logging operator that deploys vector, Viaq data model |
 | [data-model-docs](https://github.com/rhobs/observability-data-model/blob/main/cluster-logging.md)              | Data model docs                                               | 
 | [loki](https://github.com/grafana/loki)                                                                        | Loki backend with Kubernetes operator                         |
 | [redhat-openshift-logging-docs](https://github.com/openshift/openshift-docs/tree/standalone-logging-docs-main) | Documentation for the Red Hat OpenShift Logging               |
+| [eventrouter](https://github.com/openshift/eventrouter)                                                        | Kubernetes event log exporter                                 |
+| [log-file-metric-exporter](https://github.com/viaq/log-file-metric-exporter)                                  | Log file metric exporter                                      |
 | [logging-ui-plugin](https://github.com/openshift/logging-view-plugin)                                          | Logging OpenShift UI plugin                                   |
 
 ## Setup
@@ -18,9 +20,11 @@ Cross-repo workspace for Red Hat OpenShift Logging — shared specs, routing, an
 Clone all repos into this directory:
 
 ```bash
-git clone git@github.com:vectordotdev/vector.git
+git clone git@github.com:viaq/vector.git
 git clone git@github.com:openshift/cluster-logging-operator.git
+git clone git@github.com:openshift/eventrouter.git
 git clone git@github.com:grafana/loki.git
+git clone git@github.com:viaq/log-file-metric-exporter.git
 git clone git@github.com:openshift/logging-view-plugin.git
 git clone --single-branch --branch standalone-logging-docs-main git@github.com:openshift/openshift-docs.git
 ```
@@ -28,7 +32,7 @@ git clone --single-branch --branch standalone-logging-docs-main git@github.com:o
 Pull all repos:
 
 ```bash
-for d in vector cluster-logging-operator loki logging-view-plugin openshift-docs; do
+for d in vector cluster-logging-operator eventrouter loki log-file-metric-exporter logging-view-plugin openshift-docs; do
   [ -d "$d/.git" ] && echo "=== $d ===" && git -C "$d" pull --ff-only
 done
 ```
