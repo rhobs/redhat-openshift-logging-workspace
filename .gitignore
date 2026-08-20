@@ -1,5 +1,7 @@
 TODO
 cluster-logging-operator/
+eventrouter/
+log-file-metric-exporter/
 logging-view-plugin/
 loki/
 openshift-docs/

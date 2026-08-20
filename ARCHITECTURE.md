@@ -12,12 +12,14 @@ graph LR
             INFRA["Infrastructure<br/>(kube-*, openshift-*)"]
             JOURNAL["Node Journal"]
             AUDIT["Audit Logs<br/>(kubeAPI, openshiftAPI,<br/>auditd, OVN)"]
+            EROUTER["Eventrouter<br/>(Deployment)"]
         end
 
         subgraph "Collection & Forwarding"
             CLO["Logging Operator<br/>(CLO)"]
             CLF["ClusterLogForwarder CR"]
             VECTOR["Vector Collector<br/>(DaemonSet)"]
+            LFME["Log File Metric<br/>Exporter<br/>(DaemonSet)"]
         end
 
         subgraph "Storage (Optional)"
@@ -131,6 +133,8 @@ Watches `UIPlugin` CRs and deploys:
 | `cluster-logging-operator/` | ClusterLogForwarder API, Vector config generation, collector lifecycle |
 | `loki/operator/` | LokiStack API, Loki deployment management, OpenShift auth integration |
 | `vector/` | Upstream Vector collector (sources, transforms, sinks) |
+| `eventrouter/` | Kubernetes event log exporter (converts events to structured log entries) |
+| `log-file-metric-exporter/` | Prometheus metrics for container log file sizes on each node |
 | `logging-view-plugin/` | OpenShift Console logging plugin (React frontend + Go backend) |
 | `openshift-docs/` | Product documentation (authoritative for supported features) |
 

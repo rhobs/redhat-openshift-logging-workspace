@@ -7,11 +7,13 @@ Red Hat OpenShift Logging provides logging capabilities based for OpenShift. Thi
 
 | Repo | Purpose |
 |---|---|
-| [vector](https://github.com/vectordotdev/vector) | Vector collector |
+| [vector](https://github.com/viaq/vector) | Vector collector |
 | [cluster-logging-operator](https://github.com/openshift/cluster-logging-operator) | Cluster logging operator that deploys vector, Viaq data model |
 | [data-model-docs](https://github.com/rhobs/observability-data-model/blob/main/cluster-logging.md) | Data model docs |
 | [loki](https://github.com/grafana/loki) | Loki backend with Kubernetes operator |
 | [redhat-openshift-logging-docs](https://github.com/openshift/openshift-docs/tree/standalone-logging-docs-main) | Documentation for the Red Hat OpenShift Logging |
+| [eventrouter](https://github.com/openshift/eventrouter) | Kubernetes event log exporter |
+| [log-file-metric-exporter](https://github.com/viaq/log-file-metric-exporter) | Log file metric exporter |
 | [logging-ui-plugin](https://github.com/openshift/logging-view-plugin) | Logging OpenShift UI plugin |
 
 ## Cross-Repo Conventions
