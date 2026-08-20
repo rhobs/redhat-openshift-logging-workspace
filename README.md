@@ -29,6 +29,12 @@ Pull latest changes in all repos:
 make pull-repos
 ```
 
+Remove all cloned repos to start fresh (re-clone with `make clone-repos`):
+
+```bash
+make remove-repos
+```
+
 ## Specs
 
 All specifications live in `.ai/spec/`. Start with [`.ai/spec/README.md`](.ai/spec/README.md) for the product overview and reading guide. Use [`.ai/spec/how/repo-map.md`](.ai/spec/how/repo-map.md) to find which repo and spec file to update for a given concern.
@@ -55,6 +61,49 @@ The `/spec-first:init` [skill](https://github.com/joshuawilson/spec-first) was u
 Example prompt:
 > /spec-first:init create the specs. Document which features are supported and which not. The supported features are the ones that are documented in the docs. These features are either generally available (GA) or tech-preview (TP). If a feature is in the source code, but missing in docs, it is
 not supported.
+
+## Verify Bug Fix
+
+The `/verify-bug-fix` skill verifies that a JIRA bug fix resolves the reported issue. It fetches JIRA details, finds linked PRs, runs verification on a connected OpenShift cluster, and generates a JIRA-ready verification summary.
+
+### Quick Start
+
+```bash
+/verify-bug-fix LOG-8727
+```
+
+### What It Does
+
+1. **Fetches JIRA Issue** — retrieves summary, status, description, steps to reproduce, and fix version
+2. **Finds Linked PRs** — scans JIRA remote links and comments for GitHub PR/commit URLs, fetches PR details via `gh`
+3. **Derives Test Config** — determines the CLF/LokiStack spec from the JIRA steps to reproduce, PR test files, or component-based defaults (confirms with user before applying)
+4. **Verifies on Cluster** — applies test config, checks operator versions, pod health, and runs fix-specific test scenarios
+5. **Human Review** — presents all raw evidence without interpreting pass/fail
+6. **Generates Summary** — after user confirmation, produces a structured verification summary for JIRA
+
+### Prerequisites
+
+Set JIRA credentials in `~/.claude/settings.json`:
+
+```json
+{
+  "env": {
+    "JIRA_TOKEN": "your-token-here",
+    "JIRA_EMAIL": "your-email@redhat.com",
+    "JIRA_URL": "https://redhat.atlassian.net"
+  }
+}
+```
+
+Additional tools:
+- `gh` CLI — authenticated for GitHub access
+- `oc` CLI — authenticated to an OpenShift cluster (optional; the skill still provides JIRA + PR info without a cluster)
+
+### Graceful Degradation
+
+- **No cluster connection**: stops after presenting JIRA issue and PR details
+- **No PRs found**: asks the user to provide a PR link manually
+- **GitHub API errors**: falls back to `gh pr view` or asks for PR details directly
 
 ## Conventions
 
