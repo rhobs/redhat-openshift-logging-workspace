@@ -21,21 +21,20 @@ Authoritative reference for which features are supported and at what level. A fe
 
 ## APIs / CRDs
 
-| CRD | API Version | Status | Since |
-|---|---|---|---|
-| ClusterLogForwarder | `observability.openshift.io/v1` | GA | 6.0 |
-| LogFileMetricExporter | `logging.openshift.io/v1alpha1` | GA | 5.8 |
-| LokiStack | `loki.grafana.com/v1` | GA | 5.5 |
-| AlertingRule | `loki.grafana.com/v1` | GA | 5.7 |
-| RecordingRule | `loki.grafana.com/v1` | GA | 5.7 |
-| RulerConfig | `loki.grafana.com/v1` | GA | 5.7 |
+| CRD | API Version | Status |
+|---|---|---|
+| ClusterLogForwarder | `observability.openshift.io/v1` | GA |
+| LogFileMetricExporter | `logging.openshift.io/v1alpha1` | GA |
+| LokiStack | `loki.grafana.com/v1` | GA |
+| AlertingRule | `loki.grafana.com/v1` | GA |
+| RecordingRule | `loki.grafana.com/v1` | GA |
+| RulerConfig | `loki.grafana.com/v1` | GA |
 
 ## Collector
 
 | Feature | Status | Notes |
 |---|---|---|
 | Vector collector | GA | Only supported collector |
-| Fluentd collector | DEPRECATED | Bug fixes only, planned removal |
 | Collector resource configuration | GA | CPU/memory requests and limits |
 | Collector node scheduling (nodeSelector, tolerations) | GA | |
 | Collector affinity rules | GA | New in 6.3 |
@@ -196,7 +195,6 @@ Authoritative reference for which features are supported and at what level. A fe
 | Alert integration (developer) | GA | Requires `dev-alerts` feature flag |
 | Schema selector (otel/viaq/select) | GA | otel/select require OCP 4.15+ |
 | Timezone selector | GA | |
-| Kibana | DEPRECATED | Planned removal |
 
 ## Additional Features
 
@@ -217,5 +215,5 @@ Authoritative reference for which features are supported and at what level. A fe
 |---|---|
 | GA | ~80 features |
 | Technology Preview | 5 features (OTLP output, OTEL data model, `use-apiserver-cache`, `max-unavailable-rollout`, LokiStack resource limits=requests) |
-| Deprecated | 5 items (Fluentd, Kibana, azureMonitor, azureMonitor shared key auth, replicationFactor) |
+| Deprecated | 3 items (azureMonitor, azureMonitor shared key auth, replicationFactor) |
 | Unsupported (in code, not in docs) | 5 items (Alibaba Cloud OSS storage, `1x.pico` size, `openshift-network`/`static`/`dynamic`/`passthrough` tenant modes) |

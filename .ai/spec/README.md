@@ -11,7 +11,7 @@ Red Hat OpenShift Logging provides log collection, forwarding, storage, and visu
 
 ## Scope
 
-Covers the Red Hat OpenShift Logging 6.x product: log collection via Vector, forwarding via ClusterLogForwarder, storage via LokiStack, and visualization via the Logging UI Plugin. Out of scope: upstream Vector/Loki internals not exposed through the product APIs, the Cluster Observability Operator itself (only its role in deploying the UI plugin is covered), and deprecated Logging 5.x APIs (ClusterLogging CR, Fluentd, Kibana).
+Covers the Red Hat OpenShift Logging 6.x product: log collection via Vector, forwarding via ClusterLogForwarder, storage via LokiStack, and visualization via the Logging UI Plugin. Out of scope: upstream Vector/Loki internals not exposed through the product APIs, and the Cluster Observability Operator itself (only its role in deploying the UI plugin is covered).
 
 ## Audience
 

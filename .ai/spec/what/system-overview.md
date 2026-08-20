@@ -17,17 +17,15 @@ Red Hat OpenShift Logging 6.x provides cluster-level log collection, forwarding,
 6. **Loki Operator** manages `LokiStack`, `AlertingRule`, `RecordingRule`, and `RulerConfig` CRs for log storage. Installed in `openshift-operators-redhat` namespace. `[GA]`
 7. **Cluster Observability Operator (COO)** deploys the Logging UI Plugin via the `UIPlugin` CR. COO itself is Technology Preview, but the Logging UI Plugin has a support exception making it GA for logging use on OCP 4.14+. `[TP with support exception]`
 8. **Vector** is the sole supported log collector implementation. `[GA]`
-9. **Fluentd** is deprecated — bug fixes only, no enhancements, planned removal. `[DEPRECATED]`
-10. **Kibana** is deprecated — planned removal. `[DEPRECATED]`
 
 ### Supported APIs
 
-11. `ClusterLogForwarder` (`observability.openshift.io/v1`) — primary API for log collection and forwarding. `[GA, since 6.0]`
-12. `LogFileMetricExporter` (`logging.openshift.io/v1alpha1`) — Prometheus metrics about log file volume. `[GA, since 5.8]`
-13. `LokiStack` (`loki.grafana.com/v1`) — managed Loki deployment. `[GA, since 5.5]`
-14. `AlertingRule` (`loki.grafana.com/v1`) — log-based alerting rules. `[GA, since 5.7]`
-15. `RecordingRule` (`loki.grafana.com/v1`) — log-based recording rules. `[GA, since 5.7]`
-16. `RulerConfig` (`loki.grafana.com/v1`) — Loki ruler configuration. `[GA, since 5.7]`
+11. `ClusterLogForwarder` (`observability.openshift.io/v1`) — primary API for log collection and forwarding. `[GA]`
+12. `LogFileMetricExporter` (`logging.openshift.io/v1alpha1`) — Prometheus metrics about log file volume. `[GA]`
+13. `LokiStack` (`loki.grafana.com/v1`) — managed Loki deployment. `[GA]`
+14. `AlertingRule` (`loki.grafana.com/v1`) — log-based alerting rules. `[GA]`
+15. `RecordingRule` (`loki.grafana.com/v1`) — log-based recording rules. `[GA]`
+16. `RulerConfig` (`loki.grafana.com/v1`) — Loki ruler configuration. `[GA]`
 
 ### Data Models
 
@@ -63,6 +61,4 @@ Red Hat OpenShift Logging 6.x provides cluster-level log collection, forwarding,
 
 | Ticket | Summary |
 |---|---|
-| — | Removal of Fluentd collector (deprecated) |
-| — | Removal of Kibana (deprecated) |
 | — | Removal of `azureMonitor` output type (Microsoft disabling Data Collector API September 2026) |
