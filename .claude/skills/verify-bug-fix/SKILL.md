@@ -4,15 +4,15 @@ argument-hint: <JIRA-ID>
 ---
 
 ## Name
-rhol-jira:verify-bug-fix
+verify-bug-fix
 
 ## Synopsis
 ```
-/rhol-jira:verify-bug-fix <JIRA-ID>
+/verify-bug-fix <JIRA-ID>
 ```
 
 ## Description
-The `rhol-jira:verify-bug-fix` command verifies that a bug fix resolves the reported issue. It fetches JIRA details, finds linked PRs, runs verification on the cluster, and presents raw evidence for human review before generating a JIRA summary.
+The `verify-bug-fix` command verifies that a bug fix resolves the reported issue. It fetches JIRA details, finds linked PRs, runs verification on the cluster, and presents raw evidence for human review before generating a JIRA summary.
 
 This command is particularly useful for:
 - Verifying bug fixes before closing JIRA tickets
@@ -209,15 +209,10 @@ Fall back to `gh pr view` or ask user for PR details.
 
 ### Verify a Bug Fix
 ```
-/rhol-jira:verify-bug-fix LOG-8727
+/verify-bug-fix LOG-8727
 ```
 
 ### Verify Another Issue
 ```
-/rhol-jira:verify-bug-fix LOG-9636
+/verify-bug-fix LOG-9636
 ```
-
-## See Also
-
-- `/rhol-jira:cve-triage` - Triage CVE vulnerabilities
-- `/rhol-jira:add-release-notes` - Generate release notes for fixes
