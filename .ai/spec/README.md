@@ -27,6 +27,7 @@ AI agents. Content is optimized for precision and machine consumption.
 | Understand log forwarding | `what/log-forwarding.md` |
 | Understand log storage | `what/log-storage.md` |
 | Understand the UI | `what/visualization.md` |
+| Understand the log file metric exporter | `what/log-file-metric-exporter.md` |
 | Find which repo owns a concern | `how/repo-map.md` |
 | Navigate the codebase | `how/project-structure.md` |
 
@@ -38,6 +39,7 @@ AI agents. Content is optimized for precision and machine consumption.
 | `what/log-collection.md`, `what/log-forwarding.md` | `how/repo-map.md` → `cluster-logging-operator/` |
 | `what/log-storage.md` | `how/repo-map.md` → `loki/operator/` |
 | `what/visualization.md` | `how/repo-map.md` → `logging-view-plugin/` |
+| `what/log-file-metric-exporter.md` | `how/repo-map.md` → `log-file-metric-exporter/` |
 | `what/feature-support-matrix.md` | `how/repo-map.md` (cross-repo) |
 
 ## Conventions

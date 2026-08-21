@@ -19,7 +19,7 @@ graph LR
             CLO["Logging Operator<br/>(CLO)"]
             CLF["ClusterLogForwarder CR"]
             VECTOR["Vector Collector<br/>(DaemonSet)"]
-            LFME["Log File Metric<br/>Exporter<br/>(DaemonSet)"]
+            LFME["Log File Metric Exporter<br/>(DaemonSet)"]
         end
 
         subgraph "Storage (Optional)"
@@ -50,7 +50,10 @@ graph LR
     end
 
     CLO -->|"manages"| VECTOR
+    CLO -->|"manages"| LFME
     CLF -->|"configures"| CLO
+    APP -.->|"log files"| LFME
+    INFRA -.->|"log files"| LFME
     APP --> VECTOR
     INFRA --> VECTOR
     JOURNAL --> VECTOR
@@ -104,6 +107,7 @@ Logs flow through the Vector collector in stages:
 ### Red Hat OpenShift Logging Operator (CLO)
 
 Watches the `ClusterLogForwarder` CR and reconciles:
+
 - Vector collector DaemonSet (or Deployment for receiver-only configs)
 - Vector configuration (generated from the CLF spec, not templated)
 - RBAC (Roles, RoleBindings for log access authorization)
@@ -111,9 +115,12 @@ Watches the `ClusterLogForwarder` CR and reconciles:
 - ServiceMonitors for metrics
 - Periodic permission recheck (every 5 minutes)
 
+It also reconciles the `LogFileMetricExporter` CR, deploying the Log File Metric Exporter DaemonSet (a separate binary from `log-file-metric-exporter/`) that publishes the `log_logged_bytes_total` metric.
+
 ### Loki Operator
 
 Watches `LokiStack`, `AlertingRule`, `RecordingRule`, and `RulerConfig` CRs and reconciles:
+
 - All Loki components (distributor, ingester, querier, query frontend, compactor, index gateway, ruler, gateway)
 - OpenShift-specific gateway with OPA-based multitenancy
 - Object storage configuration
@@ -123,18 +130,19 @@ Watches `LokiStack`, `AlertingRule`, `RecordingRule`, and `RulerConfig` CRs and 
 ### Cluster Observability Operator (COO)
 
 Watches `UIPlugin` CRs and deploys:
+
 - Logging Console Plugin as a dynamic OpenShift Console extension
 - Connects to LokiStack for log queries
 
 ## Repository Structure
 
 | Repository | What it owns |
-|---|---|
+| --- | --- |
 | `cluster-logging-operator/` | ClusterLogForwarder API, Vector config generation, collector lifecycle |
 | `loki/operator/` | LokiStack API, Loki deployment management, OpenShift auth integration |
 | `vector/` | Upstream Vector collector (sources, transforms, sinks) |
 | `eventrouter/` | Kubernetes event log exporter (converts events to structured log entries) |
-| `log-file-metric-exporter/` | Prometheus metrics for container log file sizes on each node |
+| `log-file-metric-exporter/` | Prometheus exporter measuring bytes written to pod log files; deployed by CLO as a DaemonSet |
 | `logging-view-plugin/` | OpenShift Console logging plugin (React frontend + Go backend) |
 | `openshift-docs/` | Product documentation (authoritative for supported features) |
 
