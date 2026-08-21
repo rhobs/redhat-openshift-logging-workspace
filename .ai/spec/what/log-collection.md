@@ -52,7 +52,7 @@ The ClusterLogForwarder CR defines which logs are collected. The collector (Vect
 
 ### Kubernetes Event Router
 
-26. The Kubernetes Event Router watches for Kubernetes events and logs them to stdout, making them available for collection as container logs. `[GA]`
+26. The Kubernetes Event Router watches Kubernetes events and writes them to stdout for collection as infrastructure logs. It is deployed manually and is not managed by the operator — see `what/event-router.md`. `[GA]`
 
 ## Configuration Surface
 

@@ -10,6 +10,7 @@ Red Hat OpenShift Logging is a multi-repo workspace. Each repository is an indep
 | `loki/` | `grafana/loki` | Go | Upstream Loki + Loki Operator (LokiStack, AlertingRule, RecordingRule, RulerConfig) |
 | `vector/` | `vectordotdev/vector` | Rust | Upstream Vector collector (sources, transforms, sinks) |
 | `log-file-metric-exporter/` | `ViaQ/log-file-metric-exporter` | Go | Prometheus exporter binary that measures bytes written to pod log files; deployed by CLO as a DaemonSet |
+| `eventrouter/` | `openshift/eventrouter` | Go | Kubernetes Event Router — watches `core/v1` Events, writes JSON to a sink (stdout for collection); deployed manually, not managed by CLO |
 | `openshift-docs/` | `openshift/openshift-docs` (branch: `standalone-logging-docs-main`) | AsciiDoc | Product documentation — authoritative for supported features |
 | `logging-view-plugin/` | `openshift/logging-view-plugin` | TypeScript + Go | OpenShift Console logging plugin (UI) |
 | `.ai/spec/` | (workspace) | Markdown | Product specifications |
@@ -27,6 +28,9 @@ Red Hat OpenShift Logging is a multi-repo workspace. Each repository is an indep
 | loki | `operator/api/loki/v1/` | LokiStack, AlertingRule, RecordingRule, RulerConfig CRD types |
 | loki | `operator/internal/` | Operator controllers and manifest generation |
 | logging-view-plugin | `cmd/` | Go backend entry point |
+| eventrouter | `main.go` | Binary entry point — config load, informer start, metrics server |
+| eventrouter | `eventrouter.go` | `EventRouter` — watch event handlers, sink dispatch |
+| eventrouter | `sinks/` | Sink implementations (`stdout`, `glog`, `http`, `kafka`) |
 | logging-view-plugin | `web/src/` | React frontend source |
 | logging-view-plugin | `web/src/components/` | UI components (logs table, toolbar, histogram, filters) |
 | openshift-docs | `modules/` | AsciiDoc content modules |

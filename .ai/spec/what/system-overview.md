@@ -18,26 +18,27 @@ Red Hat OpenShift Logging 6.x provides cluster-level log collection, forwarding,
 7. **Cluster Observability Operator (COO)** deploys the Logging UI Plugin via the `UIPlugin` CR. COO itself is Technology Preview, but the Logging UI Plugin has a support exception making it GA for logging use on OCP 4.14+. `[TP with support exception]`
 8. **Vector** is the sole supported log collector implementation. `[GA]`
 9. **Log File Metric Exporter** is a standalone Prometheus exporter binary (repo `github.com/ViaQ/log-file-metric-exporter`) deployed by CLO as a separate DaemonSet in response to a `LogFileMetricExporter` CR. It measures bytes actually written to pod log files. See `what/log-file-metric-exporter.md`. `[GA]`
+10. **Kubernetes Event Router** — a standalone service, deployed manually (not an operator), that watches cluster Events and writes them to stdout for collection as infrastructure logs. See `what/event-router.md`. `[GA]`
 
 ### Supported APIs
 
-10. `ClusterLogForwarder` (`observability.openshift.io/v1`) — primary API for log collection and forwarding. `[GA]`
-11. `LogFileMetricExporter` (`logging.openshift.io/v1alpha1`) — Prometheus metrics about log file volume. `[GA]`
-12. `LokiStack` (`loki.grafana.com/v1`) — managed Loki deployment. `[GA]`
-13. `AlertingRule` (`loki.grafana.com/v1`) — log-based alerting rules. `[GA]`
-14. `RecordingRule` (`loki.grafana.com/v1`) — log-based recording rules. `[GA]`
-15. `RulerConfig` (`loki.grafana.com/v1`) — Loki ruler configuration. `[GA]`
+11. `ClusterLogForwarder` (`observability.openshift.io/v1`) — primary API for log collection and forwarding. `[GA]`
+12. `LogFileMetricExporter` (`logging.openshift.io/v1alpha1`) — Prometheus metrics about log file volume. `[GA]`
+13. `LokiStack` (`loki.grafana.com/v1`) — managed Loki deployment. `[GA]`
+14. `AlertingRule` (`loki.grafana.com/v1`) — log-based alerting rules. `[GA]`
+15. `RecordingRule` (`loki.grafana.com/v1`) — log-based recording rules. `[GA]`
+16. `RulerConfig` (`loki.grafana.com/v1`) — Loki ruler configuration. `[GA]`
 
 ### Data Models
 
-16. **ViaQ** is the default data model used by all output types. `[GA]`
-17. **OpenTelemetry (OTEL)** data model is available for OTLP output and LokiStack output with `dataModel: Otel`. `[TP]`
+17. **ViaQ** is the default data model used by all output types. `[GA]`
+18. **OpenTelemetry (OTEL)** data model is available for OTLP output and LokiStack output with `dataModel: Otel`. `[TP]`
 
 ### Lifecycle
 
-18. Operators are installed via OLM (Operator Lifecycle Manager) from OperatorHub.
-19. CLO and Loki Operator can be installed independently — CLO does not require Loki Operator if forwarding to external destinations only.
-20. The Logging UI Plugin requires both the Loki Operator (for LokiStack) and COO (for UIPlugin CR).
+19. Operators are installed via OLM (Operator Lifecycle Manager) from OperatorHub.
+20. CLO and Loki Operator can be installed independently — CLO does not require Loki Operator if forwarding to external destinations only.
+21. The Logging UI Plugin requires both the Loki Operator (for LokiStack) and COO (for UIPlugin CR).
 
 ## Configuration Surface
 
