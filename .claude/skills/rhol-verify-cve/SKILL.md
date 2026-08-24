@@ -794,6 +794,13 @@ Notes:
   - Which CVEs are matched to which Jira issues (LOG-XXXX)
   - For CVEs referenced in Jira but not in codebase: specify the module/image name and confirm it is not used
   - ORPHANED CVE ISSUES: List any Jira issues linked to the PR that reference CVEs the codebase cannot fix (e.g., LOG-9932 → CVE-2026-29181 unfixable because module not in codebase)
+
+CVE Database References:
+  - NVD: https://nvd.nist.gov/vuln/search?query=<CVE-ID>
+  - GHSA: https://github.com/advisories?query=<CVE-ID>
+  - Go Security DB: https://pkg.go.dev/vuln/<CVE-ID>
+  - Red Hat Security: https://access.redhat.com/security/cve/<CVE-ID>
+  - OSV Database: https://api.osv.dev/v1/query (POST request with package details)
 ```
 
 ## Cross-Reference Query Examples
