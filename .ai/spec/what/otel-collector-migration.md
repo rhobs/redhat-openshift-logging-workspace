@@ -68,16 +68,16 @@ All other CLF fields (inputs, outputs, filters, pipelines, serviceAccount, colle
 ### Inputs → Receivers
 
 | CLF Input | OTEL Receiver | Configuration |
-|---|---|---|
-| `application` (containers) | `filelog` | `include: [/var/log/pods/*/*/*.log]`, exclude infra namespaces |
-| `infrastructure` (containers) | `filelog` | `include: [/var/log/pods/*/*/*.log]`, include only `openshift-*`, `kube-*`, `default` namespaces |
-| `infrastructure` (journal) | `journald` | `directory: /var/log/journal` |
-| `audit` (k8s API) | `filelog` | `include: [/var/log/kube-apiserver/audit.log]` |
-| `audit` (openshift API) | `filelog` | `include: [/var/log/openshift-apiserver/audit.log]` |
-| `audit` (auditd) | `filelog` | `include: [/var/log/audit/audit.log]` |
-| `audit` (OVN) | `filelog` | `include: [/var/log/ovn/acl-audit-log.log]` |
-| `receiver` (HTTP) | `otlp` or `http` | Per CLF receiver spec |
-| `receiver` (syslog) | `syslog` | Per CLF receiver spec |
+|---|---------------|---|
+| `application` (containers) | `filelog`     | `include: [/var/log/pods/*/*/*.log]`, exclude infra namespaces |
+| `infrastructure` (containers) | `filelog`     | `include: [/var/log/pods/*/*/*.log]`, include only `openshift-*`, `kube-*`, `default` namespaces |
+| `infrastructure` (journal) | `journald`    | `directory: /var/log/journal` |
+| `audit` (k8s API) | `filelog`     | `include: [/var/log/kube-apiserver/audit.log]` |
+| `audit` (openshift API) | `filelog`     | `include: [/var/log/openshift-apiserver/audit.log]` |
+| `audit` (auditd) | `filelog`     | `include: [/var/log/audit/audit.log]` |
+| `audit` (OVN) | `filelog`     | `include: [/var/log/ovn/acl-audit-log.log]` |
+| `receiver` (HTTP) | TBD           | Per CLF receiver spec |
+| `receiver` (syslog) | `syslog`      | Per CLF receiver spec |
 
 ### Filters → Processors
 
