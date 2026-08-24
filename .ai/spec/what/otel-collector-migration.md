@@ -133,7 +133,7 @@ CLF pipelines (inputRefs → filterRefs → outputRefs) map to the OTEL Collecto
 
 ### [PLANNED] ViaQ Support — Separate Investigation
 
-Whether the OTEL collector should support the ViaQ data model (producing identical JSON output to Vector) is a separate decision. Preliminary analysis shows it is feasible but hard (~2-3 engineer-months), with key gaps in OTTL:
+Whether the OTEL collector should support the ViaQ data model (producing identical JSON output to Vector) is a separate decision. Preliminary analysis shows it is feasible but hard, with key gaps in OTTL:
 
 - Multi-line exception detection (no OTEL collector equivalent to Vector's `detect_exceptions`)
 - Dedotting label keys (OTTL lacks looping over map keys)
