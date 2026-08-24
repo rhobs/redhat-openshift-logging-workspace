@@ -29,6 +29,7 @@ AI agents. Content is optimized for precision and machine consumption.
 | Understand log storage | `what/log-storage.md` |
 | Understand the UI | `what/visualization.md` |
 | Understand the log file metric exporter | `what/log-file-metric-exporter.md` |
+| OTEL Collector migration | `what/otel-collector-migration.md` |
 | Find which repo owns a concern | `how/repo-map.md` |
 | Navigate the codebase | `how/project-structure.md` |
 
