@@ -29,6 +29,12 @@ Pull latest changes in all repos:
 make pull-repos
 ```
 
+Remove all cloned repos to start fresh (re-clone with `make clone-repos`):
+
+```bash
+make remove-repos
+```
+
 ## Specs
 
 All specifications live in `.ai/spec/`. Start with [`.ai/spec/README.md`](.ai/spec/README.md) for the product overview and reading guide. Use [`.ai/spec/how/repo-map.md`](.ai/spec/how/repo-map.md) to find which repo and spec file to update for a given concern.
