@@ -7,7 +7,8 @@ REPOS = \
 	openshift/eventrouter \
 	viaq/log-file-metric-exporter \
 	openshift/logging-view-plugin \
-	openshift/openshift-docs
+	openshift/openshift-docs \
+	openshift-eng/openshift-logging-e2e-tests
 
 REPO_DIRS = $(foreach r,$(REPOS),$(notdir $(r)))
 
