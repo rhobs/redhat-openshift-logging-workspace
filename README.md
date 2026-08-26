@@ -14,6 +14,7 @@ Cross-repo workspace for Red Hat OpenShift Logging — shared specs, routing, an
 | [eventrouter](https://github.com/openshift/eventrouter)                                                        | Kubernetes event log exporter                                 |
 | [log-file-metric-exporter](https://github.com/viaq/log-file-metric-exporter)                                   | Prometheus exporter for pod log file byte volume; deployed by CLO as a DaemonSet |
 | [logging-ui-plugin](https://github.com/openshift/logging-view-plugin)                                          | Logging OpenShift UI plugin                                   |
+| [openshift-logging-e2e-tests](https://github.com/openshift-eng/openshift-logging-e2e-tests)                    | E2E tests for OpenShift Logging                               |
 
 ## Setup
 

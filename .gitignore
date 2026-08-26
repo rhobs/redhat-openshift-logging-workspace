@@ -5,4 +5,5 @@ log-file-metric-exporter/
 logging-view-plugin/
 loki/
 openshift-docs/
+openshift-logging-e2e-tests/
 vector/
