@@ -34,25 +34,32 @@ The ClusterLogForwarder CR defines which logs are collected. The collector (Vect
 14. Receiver inputs support TLS configuration. If no TLS cert/key is provided, the operator auto-provisions certificates from the cluster's cert signing service. `[GA]`
 15. Receiver inputs are only supported on HyperShift or with Red Hat products running on the same cluster (e.g., OpenShift Virtualization, RHOSO). `[GA, limited scope]`
 
+### Collector Read Position
+
+16. The collector supports a `readFrom` setting that controls where it starts reading when no checkpoint exists for a source. `[PLANNED: LOG-9876]`
+17. When `readFrom` is `Beginning` (default), the collector reads from the start of all sources — current behavior. `[PLANNED: LOG-9876]`
+18. When `readFrom` is `End`, the collector skips historical data and starts from "now" for all input types: `read_from: end` for container and audit file sources, `since_now: true` for journald sources. `[PLANNED: LOG-9876]`
+19. When a checkpoint exists (normal restart), it always takes priority over `readFrom`. `[PLANNED: LOG-9876]`
+
 ### Collector Deployment
 
-16. The collector is deployed as a DaemonSet when collecting node-level logs (application, infrastructure, audit). `[GA]`
-17. The collector is deployed as a Deployment when acting as a receiver only (no node-level collection). `[GA]`
-18. Collector resource requests/limits (CPU, memory) are configurable via `spec.collector.resources`. `[GA]`
-19. Collector supports `nodeSelector`, `tolerations`, and `affinity` for scheduling. `[GA]` (affinity new in 6.3)
-20. Collector log level is configurable. `[GA]`
-21. Collector supports `maxUnavailable` for rolling update strategy. `[GA]`
-22. Collector supports `terminationGracePeriodSeconds`. `[GA]`
-23. Collector supports `networkPolicy` configuration. `[GA]`
-24. `managementState` can be set to `Unmanaged` to prevent the operator from reconciling the collector. `[GA]`
+20. The collector is deployed as a DaemonSet when collecting node-level logs (application, infrastructure, audit). `[GA]`
+21. The collector is deployed as a Deployment when acting as a receiver only (no node-level collection). `[GA]`
+22. Collector resource requests/limits (CPU, memory) are configurable via `spec.collector.resources`. `[GA]`
+23. Collector supports `nodeSelector`, `tolerations`, and `affinity` for scheduling. `[GA]` (affinity new in 6.3)
+24. Collector log level is configurable. `[GA]`
+25. Collector supports `maxUnavailable` for rolling update strategy. `[GA]`
+26. Collector supports `terminationGracePeriodSeconds`. `[GA]`
+27. Collector supports `networkPolicy` configuration. `[GA]`
+28. `managementState` can be set to `Unmanaged` to prevent the operator from reconciling the collector. `[GA]`
 
 ### Log File Metric Exporter
 
-25. `LogFileMetricExporter` CR exposes Prometheus metrics about per-container log file volume. CLO reconciles the CR and deploys a separate DaemonSet running the exporter binary. The exporter's metric, label, flag, and auth contract is specified in `what/log-file-metric-exporter.md`. `[GA]`
+29. `LogFileMetricExporter` CR exposes Prometheus metrics about per-container log file volume. CLO reconciles the CR and deploys a separate DaemonSet running the exporter binary. The exporter's metric, label, flag, and auth contract is specified in `what/log-file-metric-exporter.md`. `[GA]`
 
 ### Kubernetes Event Router
 
-26. The Kubernetes Event Router watches Kubernetes events and writes them to stdout for collection as infrastructure logs. It is deployed manually and is not managed by the operator — see `what/event-router.md`. `[GA]`
+30. The Kubernetes Event Router watches Kubernetes events and writes them to stdout for collection as infrastructure logs. It is deployed manually and is not managed by the operator — see `what/event-router.md`. `[GA]`
 
 ## Configuration Surface
 
@@ -74,6 +81,7 @@ The ClusterLogForwarder CR defines which logs are collected. The collector (Vect
 | `spec.collector.nodeSelector` | map | — | Node selector for collector pods |
 | `spec.collector.tolerations` | []Toleration | — | Tolerations for collector pods |
 | `spec.collector.affinity` | Affinity | — | Affinity rules for collector pods |
+| `spec.collector.readFrom` | enum | `Beginning` | `Beginning` or `End`. Controls where the collector starts reading when no checkpoint exists. `[PLANNED: LOG-9876]` |
 | `spec.serviceAccount.name` | string | — | Service account name (required) |
 
 ## Constraints
