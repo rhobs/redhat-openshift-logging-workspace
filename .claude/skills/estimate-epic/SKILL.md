@@ -19,10 +19,20 @@ work** (1 sprint = 3 weeks = 15 working days).
 
 ## Usage
 
+Claude Code:
+
 ```
 /estimate-epic LOG-1234              # size one Epic
-/estimate-epic LOG-1234 LOG-1235 # size multiple Epics
-/estimate-epic                           # size ALL unsized open Epics
+/estimate-epic LOG-1234 LOG-1235     # size multiple Epics
+/estimate-epic                        # size ALL unsized open Epics
+```
+
+Codex:
+
+```
+$estimate-epic LOG-1234              # size one Epic
+$estimate-epic LOG-1234 LOG-1235     # size multiple Epics
+$estimate-epic                        # size ALL unsized open Epics
 ```
 
 Also invoked automatically after creating a new Epic.
@@ -47,7 +57,7 @@ If the result exceeds 5, warn the user that the Epic should probably be split.
 - **Project:** `LOG`
 - **Epic Link field for JQL:** `"Epic Link"` or `parent`
 - **Sprint duration:** 3 weeks (15 working days)
-- **CLI tool**: `acli` (Atlassian CLI) — load `/jira:jira` skill for full command reference
+- **CLI tool**: `acli` (Atlassian CLI)
 - **Custom field writes**: `acli` does not support custom fields; use Jira REST API with `$JIRA_USER` and `$JIRA_TOKEN`
 
 ## Workflow
@@ -66,7 +76,7 @@ acli jira workitem search --jql 'project = LOG AND issuetype = Epic AND resoluti
 
 #### 2a. Fetch child issues and their story points
 
-Load the `/jira:jira` skill for Jira CLI reference, then search for children:
+Search for children:
 
 ```bash
 acli jira workitem search --jql '"Epic Link" = LOG-XXXX OR parent = LOG-XXXX' --json
