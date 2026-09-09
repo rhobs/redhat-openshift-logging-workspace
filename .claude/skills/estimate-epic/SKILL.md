@@ -17,25 +17,7 @@ Set story points on LOG Epics based on the sum of child issue story
 points. Child SP represent **days of work**. Epic SP represent **sprints of
 work** (1 sprint = 3 weeks = 15 working days).
 
-## Usage
-
-Claude Code:
-
-```
-/estimate-epic LOG-1234              # size one Epic
-/estimate-epic LOG-1234 LOG-1235     # size multiple Epics
-/estimate-epic                        # size ALL unsized open Epics
-```
-
-Codex:
-
-```
-$estimate-epic LOG-1234              # size one Epic
-$estimate-epic LOG-1234 LOG-1235     # size multiple Epics
-$estimate-epic                        # size ALL unsized open Epics
-```
-
-Also invoked automatically after creating a new Epic.
+Invoke automatically after creating a new LOG Epic.
 
 ## Conversion
 

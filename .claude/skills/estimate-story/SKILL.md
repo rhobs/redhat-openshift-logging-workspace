@@ -17,24 +17,7 @@ Estimate story points for one or more LOG Jira stories using the team's
 calibrated rubric. After estimating, set the story points field and append
 an estimation note to the description.
 
-## Usage
-
-Claude Code:
-
-```
-/estimate-story LOG-1234
-/estimate-story LOG-1234 LOG-1235 LOG-1236
-```
-
-Codex:
-
-```
-$estimate-story LOG-1234
-$estimate-story LOG-1234 LOG-1235 LOG-1236
-```
-
-Also invoked automatically after creating a new LOG story.
-Works for Stories, Bugs, Tasks, Weaknesses, and Vulnerabilities.
+Invoke automatically after creating a new LOG story.
 
 ## Rubric Location
 
