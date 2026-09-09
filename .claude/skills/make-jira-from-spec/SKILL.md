@@ -30,28 +30,6 @@ estimates every item.
 | CLI tool | `acli` |
 | Custom field writes | Jira REST API with `$JIRA_USER` and `$JIRA_TOKEN` |
 
-## Invocation
-
-Claude Code:
-
-```
-/make-jira-from-spec
-/make-jira-from-spec https://github.com/org/repo/pull/123
-/make-jira-from-spec LOG-1234
-```
-
-Codex:
-
-```
-$make-jira-from-spec
-$make-jira-from-spec https://github.com/org/repo/pull/123
-$make-jira-from-spec LOG-1234
-```
-
-Arguments (all optional):
-- **PR URL** — fetch the spec diff from this pull request
-- **Jira key** — existing Epic or Story to update
-
 ## Step 1: Gather Spec Changes
 
 Resolve the spec changes using this priority:

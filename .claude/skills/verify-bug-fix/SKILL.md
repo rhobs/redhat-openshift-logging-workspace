@@ -7,11 +7,6 @@ argument-hint: <JIRA-ID>
 ## Name
 verify-bug-fix
 
-## Synopsis
-Claude Code: `/verify-bug-fix <JIRA-ID>`
-
-Codex: `$verify-bug-fix <JIRA-ID>`
-
 ## Description
 The `verify-bug-fix` command verifies that a bug fix resolves the reported issue. It fetches JIRA details, finds linked PRs, runs verification on the cluster, and presents raw evidence for human review before generating a JIRA summary.
 
@@ -198,17 +193,3 @@ Ask user to provide PR link manually.
 
 ### GitHub API Errors
 Fall back to `gh pr view` or ask user for PR details.
-
-## Examples
-
-### Verify a Bug Fix
-
-Claude Code: `/verify-bug-fix LOG-8727`
-
-Codex: `$verify-bug-fix LOG-8727`
-
-### Verify Another Issue
-
-Claude Code: `/verify-bug-fix LOG-9636`
-
-Codex: `$verify-bug-fix LOG-9636`
