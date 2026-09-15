@@ -12,7 +12,7 @@ argument-hint: '6.2.13'
 
 ## Overview
 
-Audit a list of JIRA issues for an upcoming release to ensure they are ready for QE, have the correct release notes fields, and have appropriate `/hold` labels on open PRs.
+Audit a list of JIRA issues for an upcoming release to ensure they are ready for QE, have the correct release notes fields, and have appropriate `/hold` labels on open PRs before code-freeze.
 
 ## Workflow
 
@@ -28,8 +28,10 @@ When the user provides a shorthand patch version (e.g., `6.2.13`), you MUST auto
 
 Construct the following JQL query:
 ```text
-project = "OpenShift Logging" AND type in (Bug, Task, Story, Vulnerability, Weakness) AND status not in (New, "To Do", Assigned, "In Progress") AND fixVersion in (<TARGET_VERSIONS>) ORDER BY key ASC
+project = "OpenShift Logging" AND type in (Bug, Task, Story, Vulnerability, Weakness) AND status not in (New, "To Do", Assigned, "In Progress") AND resolution is EMPTY AND fixVersion in (<TARGET_VERSIONS>) ORDER BY key ASC
 ```
+
+**Note:** `resolution is EMPTY` ensures we only audit unresolved issues. This filters more accurately than `resolution = Unresolved` since Jira handles resolution field differently.
 
 ### Step 2: Jira Custom Fields
 
@@ -38,7 +40,6 @@ The following field IDs are stable across Red Hat Jira instances (redhat.atlassi
 - **Release Note Text:** `customfield_10783` — Stores the actual release note content
 - **Release Note Type:** `customfield_10785` — Options: "Bug Fix", "Enhancement", "CVE - Common Vulnerabilities and Exposures", "Release Note Not Required"
 - **Release Note Status:** `customfield_10807` — Workflow status of release notes
-- **Sprint:** `customfield_10007` — Current sprint assignment
 - **Security:** `security` — Standard field: null = public, has value = private/restricted
 
 Do NOT attempt dynamic discovery. Use these field IDs directly in all API calls.
@@ -56,7 +57,7 @@ Execute the search using the MCP JIRA tool. Fetch the required fields.
 - `labels` — Labels (check for `no-rn` and CVE markers)
 - `security` — Security level (check if private/restricted)
 - `issuelinks` — Needed for GitHub PR extraction
-- `customfield_10007` — Sprint
+- `fixVersions` — Needed for multi-release tracking
 - `customfield_10783` — Release Note Text
 - `customfield_10785` — Release Note Type
 - `customfield_10807` — Release Note Status
@@ -66,7 +67,7 @@ Execute the search using the MCP JIRA tool. Fetch the required fields.
 mcp__atlassian__searchJiraIssuesUsingJql \
   --cloudId https://redhat.atlassian.net \
   --jql "$CONSTRUCTED_JQL" \
-  --fields '["key","summary","status","issuetype","assignee","labels","security","issuelinks","customfield_10007","customfield_10783","customfield_10785","customfield_10807"]' \
+  --fields '["key","summary","status","issuetype","assignee","labels","security","issuelinks","fixVersions","customfield_10783","customfield_10785","customfield_10807"]' \
   --maxResults 100
 ```
 
@@ -85,32 +86,61 @@ For each issue, apply the validation rubric:
 **2. Non-CVE Issues (Bug, Task, Weakness, Story, etc.):**
 - **Release Note Requirement:** Must satisfy ONE of:
   - Has Release Note Text (customfield_10783 is not null) AND Release Note Type is set, OR
-  - Has 'no-rn' label in labels, OR
+  - Has 'no-rn' label in labels (convenient label to mark issues as not needing release notes), OR
   - Release Note Type == "Release Note Not Required"
 - **Security Level:** Flag if issue has security restrictions (private issues cannot be disclosed in public release notes)
 - **Action:** Flag issue for the "Issues Missing Release Notes" section if it fails these requirements
 
 **3. Status Check:**
-- Acceptable statuses: "Release Pending", "Review", "Modified", "Verified", "POST"
-- Block if status is: "Code Review" (must move to Review or Release Pending before code-freeze)
+Issues must be in the correct status for QE to pick them up:
+- **Bugs:** Must be in "MODIFIED" or "ON_QA" (indicates the fix is merged and ready for QE)
+- **Tasks/Stories:** Must be in "Review" or "Release Pending"
+- **All types:** "Verified" is acceptable (already QE'd)
+
+**Flag these statuses as needing action:**
+- **"Code Review"** — PR is still under review. Must move to Review/Modified before code-freeze.
+- **"POST"** — PR may have been merged but the issue was not transitioned. Check linked PRs:
+  - If the linked PR is **merged**, flag the issue as needing a status transition (someone likely forgot to update the issue after merge).
+  - If the linked PR is **open**, treat it like "Code Review" — the PR still needs to land.
+  - **Action:** Reach out to the assignee to clarify and update the status.
 
 **4. Private Issue Check:**
 - If `security` field is not null AND `issuetype != "Vulnerability"`:
-  - Issue is **private/restricted** and cannot be mentioned in public release notes
-  - Must either have 'no-rn' label OR be linked to a public clone
+  - Issue is **private/restricted** and cannot be mentioned in public release notes or the advisory
+  - Must satisfy ONE of:
+    - Has 'no-rn' label (no release notes needed), OR
+    - Is linked to a **public** clone that carries the release notes (check issuelinks for a "clones"/"is cloned by" relationship where the linked issue has no security level)
+  - If the private issue needs release notes but has no public clone, the fix is:
+    1. Create a public issue first
+    2. Clone from the public issue (not from the private one)
+    3. Assign release notes to the public clone
+  - **Action:** Flag for the "Private Issues" section
 
 **5. GitHub PR Check** (for issues in "Code Review" or "POST" status):
-- Extract linked GitHub PRs from `issuelinks` (look for PR URLs in external links)
-- For each PR, run: `gh pr view <PR_URL> --json labels -q '.labels[].name'`
-- **Flag if:** PR does not have `/hold` label (required before code-freeze)
+- Fetch remote links via `mcp__atlassian__getJiraIssueRemoteIssueLinks` for each issue
+- Extract GitHub PR URLs from the remote links (look for URLs containing `github.com` and `/pull/`)
+- For each PR, run: `gh pr view <PR_URL> --json labels,state -q '{labels: [.labels[].name], state: .state}'`
+- **If PR is open (not merged):**
+  - Flag if PR does not have `do-not-merge/hold` label — open PRs must have `/hold` before code-freeze to avoid being merged prematurely
+  - Flag if PR needs review attention (may need to ask for review to get it merged in time)
+- **If PR is merged:** No `/hold` check needed, but verify the Jira issue status was updated accordingly (see Status Check above)
+
+**6. Multi-Release Tracking Check:**
+- If an issue's `fixVersions` contains versions spanning multiple release streams (e.g., both 6.4.z and 6.5.z), verify there is a separate issue for each release
+- Check issuelinks for clone relationships across releases
+- If a private issue needs clones for multiple releases, the public issue must be created first, and clones made from the public one (never clone a private issue directly)
+- **Note:** This is an informational check — flag for review but don't block
 
 ### Step 5: Generate and Save Audit Report
 
-You MUST generate the full, comprehensive audit report containing all 6 sections. Do not ask for permission, and do NOT output a short summary instead of the full report.
+You MUST generate the full, comprehensive audit report containing all sections. Do not ask for permission, and do NOT output a short summary instead of the full report.
 
 **Bulk Action Links:**
-For any section containing flagged issues (Sections 2, 4, 5, and 6), you MUST generate a clickable Jira link that opens all those specific issues at once.
+For any section containing flagged issues, you MUST generate a clickable Jira link that opens all those specific issues at once.
 Construct the URL like this: `https://redhat.atlassian.net/issues/?jql=key%20in%20(LOG-1,LOG-2,LOG-3)`
+
+**Guidance for inconsistencies:**
+Most inconsistencies can be fixed by looking at the issues and figuring out what the intent was. When the intent is unclear, the report should recommend reaching out to the person assigned to the issue.
 
 **File Output (MANDATORY):**
 You MUST write the complete Markdown report to a file named `RELEASE_AUDIT_<VERSION>.md` (e.g., `RELEASE_AUDIT_6.5.3.md`) in the current workspace directory.
@@ -121,6 +151,8 @@ After saving the file, print a brief confirmation to the user that the file was 
 Use exactly this format for the file:
 
 # Release Audit Report: Logging X.Y.Z / X.Y.z
+
+**All audited issues:** *[View in Jira](<URL-encoded version of the JQL query used in Step 1>)* — this link opens the exact JQL query used for this audit.
 
 ## 1. CVE/Vulnerability Issues
 **Count:** N
@@ -141,17 +173,27 @@ Use exactly this format for the file:
 - **Criteria:** Non-CVE with no RN Text AND no 'no-rn' label AND RN Type ≠ "Release Note Not Required"
 - For each: Key, Type, Assignee, Status, Action Required
 
-## 5. Private Issues with Security Level (Non-CVE)
+## 5. Issues with Wrong Status
+**Count:** N ❌ BLOCKING
+*[View Issues in Jira](https://redhat.atlassian.net/issues/?jql=key%20in%20(...))*
+- Issues in "Code Review" or "POST" that need status transitions
+- For POST issues: indicate whether linked PR is merged (forgot to transition) or open (still in progress)
+- **Action:** Reach out to assignee if intent is unclear
+
+## 6. Private Issues with Security Level (Non-CVE)
 **Count:** N (should be 0)
 *[View Issues in Jira](https://redhat.atlassian.net/issues/?jql=key%20in%20(...))*
 - Only lists non-CVE issues with security != null
+- Indicates whether the issue has 'no-rn' label or a linked public clone
+- If neither: recommends creating a public issue first, then cloning from it
 - If count = 0, states "No private issues found" ✅
 
-## 6. PRs Missing /hold Label
+## 7. PRs Missing /hold Label
 **Count:** N (should be 0) ❌ BLOCKING
 *[View Issues in Jira](https://redhat.atlassian.net/issues/?jql=key%20in%20(...))*
-- PR URL | Linked Jira Issue | Assignee
-- If count = 0, states "All PRs have /hold label" ✅
+- Only lists OPEN PRs (merged PRs do not need /hold)
+- PR URL | PR State | Linked Jira Issue | Assignee
+- If count = 0, states "All open PRs have /hold label" ✅
 
 ## Summary
 - Table with counts across all categories
@@ -160,5 +202,7 @@ Use exactly this format for the file:
 
 ## Implementation Notes
 - **MCP JIRA:** Configured in Claude Code (uses `mcp__atlassian__searchJiraIssuesUsingJql`).
-- **GitHub CLI:** `gh` pre-authenticated for PR label checks.
+- **Remote Links:** Use `mcp__atlassian__getJiraIssueRemoteIssueLinks` per issue to find GitHub PR URLs (they are not in `issuelinks`).
+- **GitHub CLI:** `gh` pre-authenticated for PR label/state checks.
 - **Error Handling:** If MCP fails or misses required fields, report the error and stop. Treat missing security fields as public (null).
+- **Guidance:** When the intent behind an inconsistency is unclear, recommend reaching out to the assignee.
