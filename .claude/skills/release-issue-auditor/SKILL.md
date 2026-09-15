@@ -28,8 +28,10 @@ When the user provides a shorthand patch version (e.g., `6.2.13`), you MUST auto
 
 Construct the following JQL query:
 ```text
-project = "OpenShift Logging" AND type in (Bug, Task, Story, Vulnerability, Weakness) AND status not in (New, "To Do", Assigned, "In Progress") AND fixVersion in (<TARGET_VERSIONS>) ORDER BY key ASC
+project = "OpenShift Logging" AND type in (Bug, Task, Story, Vulnerability, Weakness) AND status not in (New, "To Do", Assigned, "In Progress") AND resolution is EMPTY AND fixVersion in (<TARGET_VERSIONS>) ORDER BY key ASC
 ```
+
+**Note:** `resolution is EMPTY` ensures we only audit unresolved issues. This filters more accurately than `resolution = Unresolved` since Jira handles resolution field differently.
 
 ### Step 2: Jira Custom Fields
 
