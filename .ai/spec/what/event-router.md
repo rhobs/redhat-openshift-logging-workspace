@@ -1,4 +1,6 @@
-# Kubernetes Event Router
+# Kubernetes Event Router `[DEPRECATED]`
+
+**Deprecated:** This component is being replaced by OpenTelemetry-based event collection (see `what/otel-event-collection.md`). The eventrouter image will be removed in a future release.
 
 The Kubernetes Event Router (`openshift/eventrouter`) is a standalone service that watches Kubernetes `core/v1` `Event` resources and writes each event as structured JSON to a configurable **sink**. In Red Hat OpenShift Logging it is deployed manually with the sink set to `stdout`, so the Vector collector picks up its container logs and forwards them like any other workload log. It is **not** managed by the cluster-logging-operator, has no CRD, and is configured through a mounted `config.json` file and environment variables.
 
