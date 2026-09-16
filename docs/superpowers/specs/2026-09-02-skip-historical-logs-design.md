@@ -1,132 +1,95 @@
-# LOG-9876: Skip Historical Logs on First-Time Collection
+# LOG-9876: Drop Historical Logs by Event Timestamp
 
 ## Problem
 
-When a ClusterLogForwarder is first deployed (or collectors start with no checkpoints), Vector reads existing sources from the beginning. On long-running clusters this causes a large historical backlog to be shipped as fast as the collector can send it, overwhelming downstream systems.
+When a ClusterLogForwarder is first deployed (or collectors start with no checkpoints), Vector can read a large existing backlog. Users need to discard records predating a known incident, migration, or collection boundary across all supported log types.
 
 Current workarounds are operational:
-- Point CLF at credentials that fail until the backlog is drained, then swap to real credentials
-- Rely on Loki rate limits and hope ingestion is not disrupted
+
+- Point CLF at credentials that fail until the backlog is drained, then swap to real credentials.
+- Rely on Loki rate limits and hope ingestion is not disrupted.
 
 ## Decision
 
-Add `spec.collector.readFrom` with `Beginning` (the default) and `End` values. `End` is the solution for LOG-9876: when a source has no checkpoint, it begins at the end of a file or at the current journal position. This prevents the collector from reading, processing, and forwarding the historical backlog. Existing checkpoints always take precedence, so ordinary collector restarts resume normally.
+Extend the existing `drop` filter with an `olderThan` cutoff. The collector generates VRL that compares each normalized record's `@timestamp` to the configured cutoff and drops the record only when the timestamp is valid and strictly earlier.
 
-This is intentionally a source-positioning control, not a time-based retention policy. A user who wants to suppress events older than a duration has different semantics and operational trade-offs; that is deferred as separate future work.
+`olderThan` accepts an ISO 8601 timestamp with an explicit offset or a date-only `YYYY-MM-DD` value. The operator normalizes date-only input to midnight UTC before generating Vector configuration. Missing or unparseable event timestamps are retained.
 
 ## Alternatives Considered
 
 ### Use `ignore_older_secs` for file-backed sources — rejected
 
-`ignore_older_secs` tests a file's last-modified time, not the age of records in the file. A long-running pod or service can have a log file containing hours or days of history while its most recent write keeps the file's modification time current. With `ignore_older_secs: 600`, Vector will still open that file and, under its default start position, read the entire backlog. The option is useful for avoiding inactive or rotated files, and the existing audit use remains unchanged, but it cannot meet this JIRA's requirement.
+`ignore_older_secs` tests a file's last-modified time, not the age of records in the file. A long-running pod or service can contain hours or days of history while its most recent write keeps the file current. It also cannot apply to journald. It cannot meet this Jira's record-timestamp requirement.
 
-### Use a VRL timestamp filter — viable future feature, not this solution
+### Add a separate timestamp-filter type — rejected
 
-A generated VRL transform can drop an event whose timestamp is older than a configured duration, including for journald. That offers fine-grained, per-input event-age control without changing Vector source code. It does not prevent the source from reading and decoding historical records first, so it cannot protect collector startup I/O or CPU. It also applies after every restart, including after a checkpoint: records that accumulated while the collector was unavailable can be dropped once they exceed the duration. Timestamp-missing and clock-skewed records require an explicit policy.
-
-If this capability is added later, it must have a distinct name such as `dropOlderThan`; it must not reuse `ignoreOlder`, whose established meaning is file staleness.
+A separate type would duplicate the existing drop-filter attachment, ordering, validation, and pipeline semantics. `olderThan` is another predicate for dropping a record, so it belongs on an existing drop item.
 
 ## Design
 
 ### API
 
-Add a `readFrom` field to the collector spec:
-
-```go
-// ReadFromMode controls where the collector starts reading when no checkpoint exists.
-// +kubebuilder:validation:Enum=Beginning;End
-type ReadFromMode string
-
-const (
-    ReadFromModeBeginning ReadFromMode = "Beginning"
-    ReadFromModeEnd       ReadFromMode = "End"
-)
-```
-
-Usage:
+Add optional `olderThan` to each existing `drop` item and make `test` optional:
 
 ```yaml
 apiVersion: observability.openshift.io/v1
 kind: ClusterLogForwarder
 spec:
-  collector:
-    readFrom: End
   serviceAccount:
     name: collector-sa
+  filters:
+    - name: discard-historical
+      type: drop
+      drop:
+        - olderThan: "2026-09-16"
+    - name: discard-temporary-history
+      type: drop
+      drop:
+        - test:
+            - field: .kubernetes.namespace_name
+              matches: "temporary"
+          olderThan: "2026-09-16T12:00:00-04:00"
   pipelines:
     - name: forward
+      filterRefs: [discard-historical]
       inputRefs: [application, infrastructure, audit]
       outputRefs: [my-store]
 ```
 
-- `Beginning` (default, current behavior): read from the start of all sources when no checkpoint exists.
-- `End`: skip historical data. When no checkpoint exists, start from "now" for all input types.
-- When a checkpoint exists (normal restart), it always takes priority regardless of this setting. This is Vector's built-in behavior.
+- Each drop item must define `test`, `olderThan`, or both. An item with neither is invalid.
+- Conditions in `test` and `olderThan` are ANDed within an item. Items remain ORed, preserving existing drop-filter behavior.
+- `test` remains required only when field-based conditions are configured; its individual conditions retain the existing `field` plus exactly one of `matches` or `notMatches` requirements.
 
 ### Vector Config Generation
 
-When `spec.collector.readFrom: End`, the CLO generates these additional fields per source type:
+The existing drop-filter transform gains a VRL timestamp predicate. It runs after source-specific normalization, so `@timestamp` is the canonical event timestamp for application, infrastructure container, infrastructure journal, and audit inputs. For a timestamp predicate, VRL parses `@timestamp`; a parse failure leaves the record untouched. A parseable value before the normalized cutoff causes the transform to drop the record.
 
-| Input Type | Vector Source | Field Added |
-|---|---|---|
-| Application containers | `kubernetes_logs` | `read_from = "end"` |
-| Infrastructure containers | `kubernetes_logs` | `read_from = "end"` |
-| Infrastructure journal | `journald` | `since_now = true` |
-| Audit (auditd, kubeAPI, openshiftAPI, ovn) | `file` | `read_from = "end"` |
-
-When `readFrom` is omitted or `Beginning`, no additional fields are generated.
-
-**Interaction with `ignore_older_secs` on audit sources:** The existing `ignore_older_secs` (default 3600) on audit file sources is retained. It is a file-staleness check based on modification time, complementary to `read_from`, and remains useful for its original role (LOG-9359: preventing re-read of inactive audit files).
-
-**Journald mechanism:** The journald source does not support `read_from`. Instead, `since_now: true` tells Vector to pass `--since=now` to the `journalctl` subprocess, achieving the same effect. When a checkpoint cursor exists, it takes priority.
-
-### Required Vector Change
-
-The Vector file server must honor an explicit `read_from = "end"` for files discovered after startup. This is required for `kubernetes_logs`, whose files are normally discovered asynchronously after the Kubernetes reflector has populated its metadata. Without the change, those files fall back to reading from the beginning and `readFrom: End` does not prevent their backlog from being read.
-
-The Vector change must preserve two existing guarantees:
-
-- A stored checkpoint takes precedence over `read_from`, so restarts resume normally.
-- The default `read_from = "beginning"` behavior continues to read files discovered after startup from their beginning.
-
-No Vector change is required for journald: its existing `since_now` option already invokes `journalctl --since=now` when no checkpoint cursor exists.
+The transform is generated only for pipelines that reference the filter. It does not alter source configuration, checkpoint handling, file discovery, or journald invocation. Therefore, Vector still reads and decodes the backlog before it can be filtered, and the cutoff applies to records encountered after any restart.
 
 ### Implementation Files
 
 | File | Change |
 |---|---|
-| `vector/lib/file-source/src/file_server.rs` | Honor explicit `read_from = "end"` for files discovered after startup while retaining checkpoint priority |
-| `api/observability/v1/clusterlogforwarder_types.go` or collector types file | Add `ReadFrom ReadFromMode` field to collector spec, `ReadFromMode` type and constants |
-| `internal/generator/vector/api/sources/kubernetes_log_source.go` | Add `ReadFrom` field to `KubernetesLogs` struct |
-| `internal/generator/vector/api/sources/file_source.go` | Add `ReadFrom` field to `File` struct |
-| `internal/generator/vector/api/sources/journald_source.go` | Add `SinceNow` field to `Journald` struct |
-| `internal/generator/vector/input/container.go` | Pass `readFrom` setting to `KubernetesLogs` source |
-| `internal/generator/vector/input/audit.go` | Pass `readFrom` setting to `File` sources |
-| `internal/generator/vector/input/journal.go` | Pass `readFrom` setting as `SinceNow` to `Journald` source |
+| `api/observability/v1/filter_types.go` | Add `olderThan` to `DropTest`, make `test` optional, and validate permitted combinations and timestamp syntax. |
+| `internal/validations/observability/filters/validate_filters.go` | Validate `olderThan` and reject a drop item with neither predicate. |
+| `internal/generator/vector/filter/drop/filter.go` | Generate timestamp-comparison VRL alongside existing field predicates. |
 
 ### Testing
 
-**Unit tests** (config generation):
-- For each source type, add a fixture with `readFrom: End` and verify the generated TOML contains the appropriate field.
-- Verify default: when `readFrom` is omitted, no `read_from`/`since_now` fields appear.
-- Follow existing pattern in `internal/generator/vector/input/source_test.go`.
+**Unit tests** (API validation and VRL generation):
 
-**Vector tests** (source behavior):
-- Verify an explicitly configured `read_from = "end"` starts a file discovered after startup at its end.
-- Verify a stored checkpoint still overrides `read_from = "end"`.
-- Verify the default beginning behavior for files discovered after startup is unchanged.
+- Accept a full ISO 8601 timestamp with an explicit offset and a date-only UTC-normalized value.
+- Reject malformed cutoffs and a drop item containing neither `test` nor `olderThan`.
+- Preserve existing field-only drop filters unchanged.
+- Verify valid older timestamps drop; equal and newer timestamps remain; missing and malformed event timestamps remain.
+- Verify a combined item requires both its field conditions and cutoff, while separate items retain OR behavior.
 
-**E2E tests** (`openshift-logging-e2e-tests`):
-- Deploy CLF with `readFrom: End` on a cluster with existing logs.
-- Verify collector only forwards logs written after deployment.
-- Restart collector, verify checkpoint-based resume (no gap).
+**Functional and E2E tests** (`cluster-logging-operator` and `openshift-logging-e2e-tests`):
+
+- Verify timestamp-based filtering for application, infrastructure container, infrastructure journal, and audit inputs.
+- Restart the collector and verify the filter applies to subsequently read records, including records retained by checkpoints.
 
 ### Documentation
 
-- Update `openshift-docs` to document `spec.collector.readFrom`.
-- Update `.ai/spec/what/log-collection.md` with new behavioral rule and configuration surface entry.
-
-## Future Work
-
-- A separately named per-input event-age policy (for example, `dropOlderThan`) using a VRL timestamp filter, with explicit timestamp-missing and restart semantics.
-- Per-input `readFrom` override, if the global setting proves insufficient.
+- Update `openshift-docs` to document `spec.filters[].drop[].olderThan`.
+- Update `.ai/spec/what/log-forwarding.md` and `.ai/spec/what/log-collection.md` with the filter contract and source coverage.

@@ -34,13 +34,13 @@ The ClusterLogForwarder CR defines which logs are collected. The collector (Vect
 14. Receiver inputs support TLS configuration. If no TLS cert/key is provided, the operator auto-provisions certificates from the cluster's cert signing service. `[GA]`
 15. Receiver inputs are only supported on HyperShift or with Red Hat products running on the same cluster (e.g., OpenShift Virtualization, RHOSO). `[GA, limited scope]`
 
-### Collector Read Position
+### Timestamp-Based Historical-Log Filtering
 
-16. The collector supports a `readFrom` setting that controls where it starts reading when no checkpoint exists for a source. `[GA]`
-17. When `readFrom` is `Beginning` (default), the collector reads from the start of all sources — current behavior. `[GA]`
-18. When `readFrom` is `End`, the collector skips historical data and starts from "now" for all input types: `read_from: end` for container and audit file sources, `since_now: true` for journald sources. `[GA]`
-19. When a checkpoint exists (normal restart), it always takes priority over `readFrom`. `[GA]`
-20. `readFrom: End` is useful for first-time collection to avoid processing large backlogs of historical logs; subsequent restarts always use checkpoints and ignore this setting. `[GA]`
+16. A `drop` filter with `olderThan` compares each normalized event's `@timestamp` to its configured cutoff and drops events strictly older than that cutoff. `[PLANNED: LOG-9876]`
+17. The cutoff accepts either an ISO 8601 timestamp with an explicit offset or a date-only `YYYY-MM-DD` value; a date-only value represents midnight UTC on that date. `[PLANNED: LOG-9876]`
+18. Timestamp-based dropping works for application, infrastructure container, infrastructure journal, and audit input records when their pipeline references the filter. `[PLANNED: LOG-9876]`
+19. Records with an absent or unparseable event timestamp are retained. `[PLANNED: LOG-9876]`
+20. This filter runs after Vector reads and normalizes a record. It does not prevent historical records from being read or decoded, and it applies after a restart as well as initial collection. `[PLANNED: LOG-9876]`
 
 ### Collector Deployment
 
@@ -82,7 +82,6 @@ The ClusterLogForwarder CR defines which logs are collected. The collector (Vect
 | `spec.collector.nodeSelector` | map | — | Node selector for collector pods |
 | `spec.collector.tolerations` | []Toleration | — | Tolerations for collector pods |
 | `spec.collector.affinity` | Affinity | — | Affinity rules for collector pods |
-| `spec.collector.readFrom` | enum | `Beginning` | `Beginning` or `End`. Controls where the collector starts reading when no checkpoint exists. Default behavior reads from the beginning of log sources. Set to `End` to skip historical logs on first collection. Checkpoints always take priority when they exist. |
 | `spec.serviceAccount.name` | string | — | Service account name (required) |
 
 ## Constraints
