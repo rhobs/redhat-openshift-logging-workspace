@@ -11,7 +11,7 @@ Current workarounds are operational:
 
 ## Decision
 
-Extend the existing `drop` filter with an `olderThan` cutoff. The collector generates VRL that compares each normalized record's `@timestamp` to the configured cutoff and drops the record only when the timestamp is valid and strictly earlier.
+Extend the existing `drop` filter with an `olderThan` condition. The collector generates VRL that compares each normalized record's `.timestamp` to the configured cutoff and drops the record only when the timestamp is valid and strictly earlier.
 
 `olderThan` accepts an ISO 8601 timestamp with an explicit offset or a date-only `YYYY-MM-DD` value. The operator normalizes date-only input to midnight UTC before generating Vector configuration. Missing or unparseable event timestamps are retained.
 
@@ -23,13 +23,13 @@ Extend the existing `drop` filter with an `olderThan` cutoff. The collector gene
 
 ### Add a separate timestamp-filter type — rejected
 
-A separate type would duplicate the existing drop-filter attachment, ordering, validation, and pipeline semantics. `olderThan` is another predicate for dropping a record, so it belongs on an existing drop item.
+A separate type would duplicate the existing drop-filter attachment, ordering, validation, and pipeline semantics. `olderThan` is another condition for dropping a record, so it belongs in the existing drop-test condition list.
 
 ## Design
 
 ### API
 
-Add optional `olderThan` to each existing `drop` item and make `test` optional:
+Add `olderThan` as a mutually exclusive alternative to the field-regex properties of each existing drop-test condition:
 
 ```yaml
 apiVersion: observability.openshift.io/v1
@@ -41,14 +41,15 @@ spec:
     - name: discard-historical
       type: drop
       drop:
-        - olderThan: "2026-09-16"
+        - test:
+            - olderThan: "2026-09-16"
     - name: discard-temporary-history
       type: drop
       drop:
         - test:
+            - olderThan: "2026-09-16T12:00:00-04:00"
             - field: .kubernetes.namespace_name
               matches: "temporary"
-          olderThan: "2026-09-16T12:00:00-04:00"
   pipelines:
     - name: forward
       filterRefs: [discard-historical]
@@ -56,13 +57,13 @@ spec:
       outputRefs: [my-store]
 ```
 
-- Each drop item must define `test`, `olderThan`, or both. An item with neither is invalid.
-- Conditions in `test` and `olderThan` are ANDed within an item. Items remain ORed, preserving existing drop-filter behavior.
-- `test` remains required only when field-based conditions are configured; its individual conditions retain the existing `field` plus exactly one of `matches` or `notMatches` requirements.
+- Each drop item must define at least one `test` condition. An empty item or condition is invalid.
+- Conditions within `test` are ANDed. Items remain ORed, preserving existing drop-filter behavior.
+- A condition is either `olderThan`, or `field` plus exactly one of `matches` or `notMatches`. `olderThan` is mutually exclusive with all three field-predicate properties because it always evaluates `.timestamp`.
 
 ### Vector Config Generation
 
-The existing drop-filter transform gains a VRL timestamp predicate. It runs after source-specific normalization, so `@timestamp` is the canonical event timestamp for application, infrastructure container, infrastructure journal, and audit inputs. For a timestamp predicate, VRL parses `@timestamp`; a parse failure leaves the record untouched. A parseable value before the normalized cutoff causes the transform to drop the record.
+The existing drop-filter transform gains a VRL timestamp predicate. It runs after source-specific normalization, so `.timestamp` is the canonical event timestamp for application, infrastructure container, infrastructure journal, and audit inputs. For a timestamp predicate, VRL parses `.timestamp`; a parse failure leaves the record untouched. A parseable value before the normalized cutoff causes the transform to drop the record.
 
 The transform is generated only for pipelines that reference the filter. It does not alter source configuration, checkpoint handling, file discovery, or journald invocation. Therefore, Vector still reads and decodes the backlog before it can be filtered, and the cutoff applies to records encountered after any restart.
 
@@ -70,8 +71,8 @@ The transform is generated only for pipelines that reference the filter. It does
 
 | File | Change |
 |---|---|
-| `api/observability/v1/filter_types.go` | Add `olderThan` to `DropTest`, make `test` optional, and validate permitted combinations and timestamp syntax. |
-| `internal/validations/observability/filters/validate_filters.go` | Validate `olderThan` and reject a drop item with neither predicate. |
+| `api/observability/v1/filter_types.go` | Add `olderThan` to `DropCondition` and validate its mutual exclusion with field predicates and its timestamp syntax. |
+| `internal/validations/observability/filters/validate_filters.go` | Validate `olderThan` and reject an empty or mixed-form drop condition. |
 | `internal/generator/vector/filter/drop/filter.go` | Generate timestamp-comparison VRL alongside existing field predicates. |
 
 ### Testing
@@ -79,10 +80,10 @@ The transform is generated only for pipelines that reference the filter. It does
 **Unit tests** (API validation and VRL generation):
 
 - Accept a full ISO 8601 timestamp with an explicit offset and a date-only UTC-normalized value.
-- Reject malformed cutoffs and a drop item containing neither `test` nor `olderThan`.
+- Reject malformed cutoffs, an empty drop item or condition, and a condition that mixes `olderThan` with field-predicate properties.
 - Preserve existing field-only drop filters unchanged.
 - Verify valid older timestamps drop; equal and newer timestamps remain; missing and malformed event timestamps remain.
-- Verify a combined item requires both its field conditions and cutoff, while separate items retain OR behavior.
+- Verify a combined test requires both its timestamp and field conditions, while separate items retain OR behavior.
 
 **Functional and E2E tests** (`cluster-logging-operator` and `openshift-logging-e2e-tests`):
 
@@ -91,5 +92,5 @@ The transform is generated only for pipelines that reference the filter. It does
 
 ### Documentation
 
-- Update `openshift-docs` to document `spec.filters[].drop[].olderThan`.
+- Update `openshift-docs` to document `spec.filters[].drop[].test[].olderThan`.
 - Update `.ai/spec/what/log-forwarding.md` and `.ai/spec/what/log-collection.md` with the filter contract and source coverage.

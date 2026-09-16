@@ -36,7 +36,7 @@ The ClusterLogForwarder CR defines which logs are collected. The collector (Vect
 
 ### Timestamp-Based Historical-Log Filtering
 
-16. A `drop` filter with `olderThan` compares each normalized event's `@timestamp` to its configured cutoff and drops events strictly older than that cutoff. `[PLANNED: LOG-9876]`
+16. A `drop` filter with `olderThan` compares each normalized event's `.timestamp` to its configured cutoff and drops events strictly older than that cutoff. `[PLANNED: LOG-9876]`
 17. The cutoff accepts either an ISO 8601 timestamp with an explicit offset or a date-only `YYYY-MM-DD` value; a date-only value represents midnight UTC on that date. `[PLANNED: LOG-9876]`
 18. Timestamp-based dropping works for application, infrastructure container, infrastructure journal, and audit input records when their pipeline references the filter. `[PLANNED: LOG-9876]`
 19. Records with an absent or unparseable event timestamp are retained. `[PLANNED: LOG-9876]`

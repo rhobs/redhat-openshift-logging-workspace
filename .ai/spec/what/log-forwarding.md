@@ -76,11 +76,11 @@ The ClusterLogForwarder CR defines how collected logs are transformed and routed
 | `spec.outputs[].tuning.maxWrite` | string | — | Max payload size |
 | `spec.outputs[].tuning.compression` | string | — | Compression algorithm |
 | `spec.filters[].type` | enum | — | Filter type (see rules 25–30) |
-| `spec.filters[].drop[].test[]` | []DropCondition | — | Optional field-based conditions. All conditions in a drop item must match for that item to drop the record. |
-| `spec.filters[].drop[].test[].field` | FieldPath | — | Field path evaluated by the drop condition. Required when `matches` or `notMatches` is set. |
+| `spec.filters[].drop[].test[]` | []DropCondition | — | Required conditions. All conditions in a drop item must match for that item to drop the record. |
+| `spec.filters[].drop[].test[].field` | FieldPath | — | Field path evaluated by a field-based drop condition. Required with `matches` or `notMatches`; omitted for `olderThan`. |
 | `spec.filters[].drop[].test[].matches` | string (regex) | — | Drop when the field matches this expression. Mutually exclusive with `notMatches`. |
 | `spec.filters[].drop[].test[].notMatches` | string (regex) | — | Drop when the field does not match this expression. Mutually exclusive with `matches`. |
-| `spec.filters[].drop[].olderThan` | string (ISO 8601 timestamp or `YYYY-MM-DD`) | — | Drop records whose valid event `@timestamp` is strictly earlier than this cutoff. A date-only value is normalized to `T00:00:00Z`. |
+| `spec.filters[].drop[].test[].olderThan` | string (ISO 8601 timestamp or `YYYY-MM-DD`) | — | Drop records whose valid event `.timestamp` is strictly earlier than this cutoff. A date-only value is normalized to `T00:00:00Z`. Mutually exclusive with `field`, `matches`, and `notMatches`. |
 | `spec.pipelines[].inputRefs` | []string | — | Input names to read from |
 | `spec.pipelines[].outputRefs` | []string | — | Output names to write to |
 | `spec.pipelines[].filterRefs` | []string | — | Filter names to apply (in order) |
@@ -90,9 +90,9 @@ The ClusterLogForwarder CR defines how collected logs are transformed and routed
 - Each output name must be unique within the ClusterLogForwarder.
 - Each filter name must be unique within the ClusterLogForwarder.
 - Pipeline references must resolve to defined inputs, outputs, and filters.
-- Each `drop` item must define at least one of `test` or `olderThan`. When both are defined, both must match before that item drops a record.
-- `olderThan` must be a valid ISO 8601 timestamp with an explicit offset, or a date-only `YYYY-MM-DD` value. An invalid value makes the filter invalid.
-- A drop filter retains a record whose event `@timestamp` is absent or cannot be parsed; timestamp-based dropping applies only to valid timestamps.
+- Each `drop` item must define at least one `test` condition. Each condition must be either an `olderThan` cutoff or a field predicate containing `field` and exactly one of `matches` or `notMatches`.
+- `olderThan` must be a valid ISO 8601 timestamp with an explicit offset, or a date-only `YYYY-MM-DD` value. It is mutually exclusive with the field-predicate fields. An invalid value makes the filter invalid.
+- A drop filter retains a record whose event `.timestamp` is absent or cannot be parsed; timestamp-based dropping applies only to valid timestamps.
 - The `lokiStack` output type requires a LokiStack CR in the target namespace.
 - Template syntax (`{.field.path}`) availability varies by output type and field. Not all fields support templating.
 - The `otlp` output requires the Technology Preview annotation on the ClusterLogForwarder CR.
