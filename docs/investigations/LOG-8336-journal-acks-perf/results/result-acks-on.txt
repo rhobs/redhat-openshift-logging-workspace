@@ -1,0 +1,15 @@
+================ PHASE: B: ACKS ON (acknowledgements.enabled=true)  (pod=collector-5bm8r, node=ip-10-0-1-18.ec2.internal, win=3m) ================
+collector pod                          collector-5bm8r
+journal read rate (ev/s)               1302.9286861912415
+sink delivered throughput (ev/s)       1308.895392635951
+sink received rate (ev/s)              1302.9286861912415
+buffer events (current)                285
+buffer byte size (current)             526608
+avg loki request RTT (s)               0.036181977862069
+avg in-flight requests                 0.5
+avg buffer send duration (s)           0.002123406981146895
+sink component p50 latency (s)         NaN
+sink component p95 latency (s)         NaN
+collector CPU (cores)                  0.4234634050827774
+collector mem working set (bytes)      106323968
+
