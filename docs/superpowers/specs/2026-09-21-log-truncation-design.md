@@ -24,13 +24,13 @@ The impact compounds for audit logs: they are JSON-formatted, and even a truncat
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Default action | **Truncate** (override Vector's upstream `drop` default) | Partial data > no data; improves production observability; breaking change justified by observability gain |
+| Default action | **Always truncate** (no user configuration) | Partial data > no data; defensive mechanism; no justification for allowing admins to prefer complete data loss |
 | Truncation marker | `..TRUNCATED` suffix (11 bytes, hardcoded by Vector) | Clear indicator for downstream consumers; cannot be customized (Vector upstream) |
-| Audit log handling | **Fuzzy JSON parser** in Rust (new Vector code) | Preserves structured audit fields (verb, user, objectRef) even when JSON is incomplete; critical for compliance/forensics |
+| Audit log handling | **Fuzzy JSON parser** as Vector transform (new code in RH fork) | Preserves structured audit fields (verb, user, objectRef) even when JSON is incomplete; critical for compliance/forensics; transform is cleaner separation than in-source parsing |
 | File-level truncation | Not supported (drop only) | Vector upstream limitation; file reader can only drop oversized lines, not truncate them |
-| Configuration surface | Per-input tuning fields in CLF CR | Allows different limits for app/infra/audit logs; audit gets higher defaults (16MB vs 1MB) |
-| Metrics granularity | Namespace/pod/container labels | Enables operators to identify sources of oversized logs for tuning |
-| ViaQ envelope extension | `.structured_partial: true` field | Additive-only change; downstream systems can opt into handling partial logs |
+| Configuration surface | Single `maxMergedLineBytes` field per input | Simplified from dual max_line + max_merged; avoids confusion; audit gets higher default (16MB vs 1MB) |
+| Metrics granularity | Namespace/pod/container for app/infra; hostname for audit | Enables operators to identify sources of oversized logs; audit logs are node-scoped not pod-scoped |
+| Parsed field target | Merged into root level (not `.structured` object) | Matches existing audit log parsing behavior; no special nesting |
 | Vector buffer limit | Document 128MB hard limit | Upstream constraint; no code change, just user guidance |
 
 ## Architecture
@@ -40,20 +40,18 @@ The impact compounds for audit logs: they are JSON-formatted, and even a truncat
 ```
 ClusterLogForwarder CR
   └── spec.inputs[].{type}.tuning
-      ├── maxMessageSize: "32KB"
-      ├── maxMergedLineBytes: "16MB"
-      └── oversizedAction: "truncate"
+      └── maxMergedLineBytes: "16MB"  (optional, defaults: 1MB app/infra, 16MB audit)
          │
          ▼
     CLO reconciler
       └── Generates Vector config
           └── kubernetes_logs source
-              ├── max_line_bytes: 32768
+              ├── max_line_bytes: 16777216  (same as max_merged_line_bytes)
               ├── max_merged_line_bytes: 16777216
-              └── max_merged_line_action: "truncate"  ← CLO sets this even if user omits it
+              └── max_merged_line_action: "truncate"  ← Always set by CLO (not user-configurable)
 ```
 
-**Key point:** When `oversizedAction` is omitted from the CLF CR, CLO explicitly sets Vector's `max_merged_line_action: "truncate"`. This overrides Vector's upstream default (`drop`) to prioritize data preservation.
+**Key point:** CLO always sets Vector's `max_merged_line_action: "truncate"`. There is no user-facing `oversizedAction` configuration — truncation is always enabled as a defensive mechanism.
 
 ### Truncation Processing Flow
 
@@ -61,49 +59,43 @@ ClusterLogForwarder CR
 Container log file
   │
   ▼
-Vector file reader (max_line_bytes)
+Vector file reader (max_line_bytes = max_merged_line_bytes)
   ├── Line <= limit → pass through
   └── Line > limit → DROP (file-level truncation not supported)
       │
       ▼
-Partial event merger (max_merged_line_bytes)
+Partial event merger (max_merged_line_bytes, action=truncate always)
   ├── Merged line <= limit → emit normally
-  └── Merged line > limit
+  └── Merged line > limit → truncate to limit, append ..TRUNCATED, emit
       │
-      ├─ oversizedAction: "drop" → discard, increment drop metric
-      │
-      └─ oversizedAction: "truncate"
-         │
-         ├─ Log type: application/infrastructure
-         │    └── Truncate to limit, append ..TRUNCATED, emit
-         │
-         └─ Log type: audit
-              └── Fuzzy JSON parser
-                  ├── JSON detected → extract valid fields
-                  │    └── Populate .structured, set .structured_partial: true
-                  │
-                  └── Not JSON / parse failed → raw truncated bytes
+      ▼
+Fuzzy JSON parser transform (audit logs only)
+  ├── Log type: application/infrastructure → pass through unchanged
+  │
+  └── Log type: audit + contains ..TRUNCATED
+      ├── JSON detected → extract valid fields, merge to root, add structured_partial: true
+      └── Not JSON / parse failed → pass through unchanged
 ```
 
-### Fuzzy JSON Parser (New Vector Code)
+### Fuzzy JSON Parser (New Vector Transform)
 
-**Location:** `src/sources/kubernetes_logs/fuzzy_json_parser.rs` (new module in Vector fork)
+**Location:** `src/transforms/audit_json_fuzzy_parser.rs` (new transform in Red Hat Vector fork)
 
-**Integration:** Called from `partial_events_merger.rs` when:
-- Truncation occurs (`merged line > max_merged_line_bytes`)
-- Log type is `audit`
-- Content starts with `{` or `[`
+**Integration:** Inserted into Vector pipeline after kubernetes_logs source and merger, before ViaQ normalizer. Applied only to audit log streams (filtered by log type metadata).
 
 **Parser Strategy:**
-1. Use streaming JSON parser (`serde_json::StreamDeserializer`) that can handle incomplete input
-2. Extract fields as encountered, stop at first parse error
-3. Special handling for known audit schema fields:
-   - Top-level: `verb`, `requestURI`, `auditID`
-   - User: `user.username`, `user.groups`
-   - Object: `objectRef.resource`, `objectRef.namespace`, `objectRef.name`
-   - Response: `responseStatus.code`, `responseStatus.message`
-   - Metadata: `sourceIPs[0]`, `userAgent`
-4. Return extracted fields as `serde_json::Value` map
+1. Trigger: Only runs on audit logs with `..TRUNCATED` suffix in `message` field
+2. Detection: Check if truncated content starts with `{` or `[`
+3. Parse: Use streaming JSON parser (`serde_json::StreamDeserializer`) that handles incomplete input
+4. Extract: Fields as encountered, stop at first parse error. Priority fields based on forensic analysis value:
+   - What: `verb` (action type)
+   - Who: `user.username`
+   - Target: `objectRef.resource`, `objectRef.namespace`, `objectRef.name`
+   - Outcome: `responseStatus.code`
+   - Context: `requestURI`, `sourceIPs[0]`, `userAgent`, `auditID` (correlation)
+5. Merge: Extracted fields into event root level (not nested object)
+6. Mark: Add `structured_partial: true` to root when extraction succeeds
+7. Return: Modified event with parsed fields merged in
 
 **Error Handling:**
 - Parse failures logged at debug level (not errors)
@@ -142,20 +134,15 @@ Partial event merger (max_merged_line_bytes)
 ```json
 {
   "message": "truncated JSON bytes..TRUNCATED",
-  "structured": {
-    "verb": "create",
-    "user": {"username": "admin"},
-    "objectRef": {"resource": "pods", "namespace": "default", "name": "test"}
-  },
+  "verb": "create",
+  "user": {"username": "admin"},
+  "objectRef": {"resource": "pods", "namespace": "default", "name": "test"},
   "structured_partial": true,
-  "kubernetes": {
-    "namespace": "kube-apiserver",
-    "pod": "kube-apiserver-123",
-    "container": "kube-apiserver"
-  },
+  "hostname": "node-1.example.com",
   "@timestamp": "2026-09-21T10:00:00Z"
 }
 ```
+Note: Parsed fields are merged into root, not nested in a `structured` object. This matches existing audit log parsing behavior.
 
 ## Scope of Change
 
@@ -163,14 +150,14 @@ Partial event merger (max_merged_line_bytes)
 
 | Repo | Changes |
 |---|---|
-| **vector** (fork) | • Add fuzzy JSON parser module (`fuzzy_json_parser.rs`)<br>• Integrate into `partial_events_merger.rs`<br>• Add metrics: `audit_json_fuzzy_parse_attempts_total`, `audit_json_fuzzy_parse_success_total`<br>• Tests for fuzzy parser scenarios |
-| **cluster-logging-operator** | • Extend CLF API: add `tuning.oversizedAction` to input specs<br>• Update Vector config generation: map CLF fields to Vector config<br>• Set `truncate` as default when field omitted<br>• Different defaults per input type (app/infra/audit)<br>• Update reconciler logic for `max_line_bytes` capping (rule 11) |
+| **vector** (fork) | • Add fuzzy JSON parser transform (`audit_json_fuzzy_parser.rs`)<br>• Add metrics: `message_truncated_total`, `audit_json_fuzzy_parse_attempts_total`, `audit_json_fuzzy_parse_success_total`<br>• Tests for transform scenarios |
+| **cluster-logging-operator** | • Extend CLF API: add `tuning.maxMergedLineBytes` to input specs<br>• Update Vector config generation: map CLF field to Vector config, hardcode `max_merged_line_action: truncate`<br>• Different defaults per input type (app/infra: 1MB, audit: 16MB)<br>• Set `max_line_bytes` = `max_merged_line_bytes` to allow partial events through |
 | **redhat-openshift-logging-workspace** | • This design doc<br>• Canonical spec (`.ai/spec/what/log-truncation.md`)<br>• Update `.ai/spec/README.md` with spec link |
-| **redhat-openshift-logging-docs** | • User guide: truncation behavior, configuration examples<br>• Metrics guide: how to query truncated logs, identify sources<br>• Best practices: reducing log verbosity, sizing limits<br>• Audit log guidance: JSON truncation impact, `.structured_partial` field |
+| **redhat-openshift-logging-docs** | • User guide: truncation behavior, configuration examples<br>• Metrics guide: how to query truncated logs, identify sources<br>• Best practices: reducing log verbosity, sizing limits<br>• Audit log guidance: JSON truncation impact, `structured_partial` field |
 
 ### API Changes (ClusterLogForwarder)
 
-**New fields (all optional):**
+**New field (optional):**
 
 ```yaml
 spec:
@@ -179,44 +166,40 @@ spec:
       type: application
       application:
         tuning:
-          maxMessageSize: "32KB"           # default: 16KB
-          maxMergedLineBytes: "1MB"        # default: 1MB
-          oversizedAction: "truncate"      # default: "truncate" (set by CLO if omitted)
+          maxMergedLineBytes: "128KB"      # default: 1MB
     
     - name: my-audit
       type: audit
       audit:
         tuning:
-          maxMessageSize: "1MB"            # default: 1MB (higher than app/infra)
-          maxMergedLineBytes: "16MB"       # default: 16MB (higher than app/infra)
-          oversizedAction: "truncate"      # default: "truncate"
+          maxMergedLineBytes: "32MB"       # default: 16MB
 ```
 
 **Backward compatibility:**
-- All fields optional; existing CRs work without changes
-- Omitting fields uses defaults
-- Default behavior changes from `drop` to `truncate` (behavioral change, but preserves more data)
+- Field is optional; existing CRs work without changes
+- Omitting field uses defaults (1MB for app/infra, 16MB for audit)
+- Default behavior changes from silent drop to truncate (behavioral change, but preserves more data and improves observability)
 
 ## Migration Phases
 
-### Phase 1: Vector Fuzzy JSON Parser (upstream contribution)
-1. Implement `fuzzy_json_parser.rs` module in Vector
+### Phase 1: Vector Fuzzy JSON Parser Transform (Red Hat fork)
+1. Implement `audit_json_fuzzy_parser.rs` transform in Vector fork
 2. Add unit tests for partial JSON extraction
-3. Integrate into `partial_events_merger.rs` for audit logs
-4. Add new metrics
-5. Submit PR to Vector upstream
+3. Register transform in Vector's transform registry
+4. Add new metrics (`message_truncated_total`, `audit_json_fuzzy_parse_*`)
+5. This stays in RH fork; not proposed upstream
 
 ### Phase 2: CLF API Extension
-1. Add `tuning.oversizedAction` field to CLF API
+1. Add `tuning.maxMergedLineBytes` field to CLF API
 2. Update CRD schema and validation
 3. Generate API documentation
 4. Add unit tests for API validation
 
 ### Phase 3: CLO Reconciler Updates
-1. Map CLF `tuning` fields to Vector config
-2. Implement default override logic (set `truncate` when omitted)
-3. Implement `max_line_bytes` capping for drop mode (rule 11)
-4. Add different defaults per input type
+1. Map CLF `tuning.maxMergedLineBytes` to Vector config
+2. Hardcode `max_merged_line_action: truncate` in generated Vector config
+3. Set `max_line_bytes` = `max_merged_line_bytes` to allow partial events through
+4. Add different defaults per input type (1MB app/infra, 16MB audit)
 5. Integration tests: CLF CR → Vector config verification
 
 ### Phase 4: Metrics and Observability
@@ -243,9 +226,9 @@ spec:
 | Metric | Target | Validation |
 |---|---|---|
 | Truncated logs preserved (vs dropped) | 100% of logs <= limit preserved | Functional test: emit oversized logs, verify truncated output |
-| Audit log structured field extraction | >80% of truncated audit logs have valid `.structured` fields | Real cluster test with Kubernetes audit logs |
+| Audit log structured field extraction | >80% of truncated audit logs have valid parsed fields at root | Real cluster test with Kubernetes audit logs |
 | Metric accuracy | 100% of truncated logs counted in metrics | Compare log output count vs metric counter |
-| Metric label correctness | Namespace/pod/container labels match source | Query metrics, cross-reference with log metadata |
+| Metric label correctness | Namespace/pod/container labels match source for app/infra; hostname label matches source node for audit | Query metrics, cross-reference with log metadata |
 | Performance impact (fuzzy parser) | <5ms p99 parse latency per truncated audit log | Benchmark with large JSON payloads |
 | No data loss for logs within limits | 100% of logs <= limit pass through unchanged | Regression test suite |
 
@@ -253,32 +236,33 @@ spec:
 
 The product documentation must cover:
 
-1. **Scope of limits** — `maxMessageSize` and `maxMergedLineBytes` apply to **originating log message only**, not the enriched ViaQ envelope
+1. **Scope of limits** — `maxMergedLineBytes` applies to **originating log message only**, not the enriched ViaQ envelope
 2. **Vector buffer constraint** — 128MB hard limit; keep `maxMergedLineBytes` well below (recommend max 64MB)
 3. **Identifying sources of oversized logs** — PromQL examples:
    ```promql
-   # Top 10 namespaces with most truncated logs
-   topk(10, sum by (namespace) (rate(log_merged_lines_truncated_total[5m])))
+   # Top 10 namespaces with most truncated app logs
+   topk(10, sum by (namespace) (rate(message_truncated_total{log_type="application"}[5m])))
    
-   # Truncated logs by pod
-   sum by (namespace, pod) (log_merged_lines_truncated_total)
+   # Truncated audit logs by node
+   sum by (hostname) (message_truncated_total{log_type="audit"})
    ```
 4. **Reducing log verbosity** — application-side tuning strategies
-5. **Audit log truncation** — explain fuzzy JSON parsing, `.structured_partial` field, compliance implications
+5. **Audit log truncation** — explain fuzzy JSON parsing, root-level `structured_partial` field, compliance implications
 6. **Truncation marker** — `..TRUNCATED` suffix for downstream query patterns
-7. **Querying partial audit logs** — Loki/ES examples for `.structured_partial: true`
+7. **Querying partial audit logs** — Loki/ES examples for `structured_partial: true`
 
 ## Risks
 
 | Risk | Mitigation |
 |---|---|---|
 | Fuzzy JSON parser bugs crash Vector | Extensive unit tests; parse errors logged at debug, not errors; fallback to raw bytes on failure |
-| Performance impact of JSON parsing | Benchmark before merge; parser only runs on truncated audit logs (rare case); streaming parser is efficient |
-| Behavioral change (drop → truncate) breaks downstream | Truncation preserves more data, not less; `.structured_partial` is additive-only; release notes document change |
-| Downstream systems don't handle `.structured_partial` | Field is optional; systems that ignore it still get `.message` field with truncated content |
+| Performance impact of JSON parsing | Benchmark before merge; transform only runs on truncated audit logs (rare case); streaming parser is efficient |
+| Behavioral change (drop → truncate) breaks downstream | Truncation preserves more data, not less; `structured_partial` is additive-only; release notes document change |
+| Downstream systems don't handle `structured_partial` | Field is optional; systems that ignore it still get `message` field and parsed fields at root |
 | Fuzzy parser extracts wrong fields | Parser validates JSON structure; only extracts complete key-value pairs; tests cover edge cases |
 | Users set limits too high, hit 128MB Vector limit | Document recommended max (64MB); CLO could add validation warning for limits >64MB |
 | Audit logs missing critical fields after truncation | Users can increase `maxMergedLineBytes` for audit; default is 16MB (large enough for most events) |
+| No way to revert to old drop behavior | Acceptable tradeoff; truncation is strictly better for observability; no valid use case for preferring silent drops |
 
 ## Testing
 
@@ -286,20 +270,19 @@ The product documentation must cover:
 - Fuzzy JSON parser: valid/invalid JSON, truncation at various points, nested objects/arrays
 - CLF API validation: field types, defaults, enum values
 - Vector config generation: CLF fields → Vector config mapping
-- `max_line_bytes` capping logic (rule 11)
+- `max_line_bytes` = `max_merged_line_bytes` configuration logic
 
 ### Integration Tests
 - End-to-end: CLF CR → Vector config → truncated log output
 - Metrics: verify counters increment correctly with proper labels
 - Fuzzy parser: real Kubernetes audit events truncated at various points
-- ViaQ envelope: `.structured` and `.structured_partial` fields populated correctly
+- ViaQ envelope: parsed fields merged into root and `structured_partial` flag set correctly
 
 ### Functional Tests (on cluster)
 - Application logs: emit oversized logs, verify truncation marker
 - Infrastructure logs: same as application
 - Audit logs: trigger large audit events (pod create with big configmap), verify fuzzy parsing
-- Metrics: scrape `/metrics`, verify `log_merged_lines_truncated_total` with labels
-- Drop mode: set `oversizedAction: drop`, verify logs are dropped (not truncated)
+- Metrics: scrape `/metrics`, verify `message_truncated_total` with correct labels per log type
 
 ### Performance Tests
 - Fuzzy parser latency: benchmark with 1MB, 10MB, 100MB JSON payloads
@@ -309,15 +292,19 @@ The product documentation must cover:
 ## Open Questions
 
 1. **Target release** — Which OpenShift Logging version? (6.7, 6.8?)
-2. **Vector upstream acceptance** — Will Vector upstream accept fuzzy JSON parser PR, or must we maintain it in our fork?
-3. **Validation warning for high limits** — Should CLO warn when `maxMergedLineBytes > 64MB` (approaching 128MB Vector limit)?
-4. **Default `maxMergedLineBytes` for audit** — Is 16MB sufficient, or should it be higher (32MB, 64MB)?
-5. **Fuzzy parser configurability** — Should users be able to disable fuzzy parsing for audit logs, or is it always-on when `oversizedAction: truncate`?
+2. **Validation warning for high limits** — Should CLO warn when `maxMergedLineBytes > 64MB` (approaching 128MB Vector limit)?
+3. **Default `maxMergedLineBytes` for audit** — Is 16MB sufficient, or should it be higher (32MB, 64MB)?
+
+### Resolved
+
+- **Vector upstream acceptance** — Fuzzy JSON parser stays in RH fork, not proposed upstream.
+- **Fuzzy parser configurability** — Always-on for audit logs when truncation occurs. No user toggle.
+- **oversizedAction configuration** — Removed. Truncation is always enabled; no drop option exposed.
 
 ## Future Enhancements (Out of Scope)
 
 - **File-level truncation** — Vector doesn't support truncating individual lines at the file reader level (only drop). Upstream feature request.
 - **Custom truncation marker** — `..TRUNCATED` is hardcoded by Vector. Could be configurable in future.
 - **Smart JSON truncation** — Attempt to close JSON structure gracefully (add `}` or `]`) instead of leaving it broken. Complex edge cases.
-- **Configurable fuzzy parser fields** — Allow users to specify which audit fields to extract. Current implementation uses a fixed set.
+- **CLF-level fuzzy parser field configuration** — Expose the priority fields list through the ClusterLogForwarder CR so users don't need to edit Vector config directly.
 - **Truncation for non-Kubernetes logs** — Currently only applies to merged partial events from Kubernetes container logs. Could extend to journal logs, receiver inputs, etc.
