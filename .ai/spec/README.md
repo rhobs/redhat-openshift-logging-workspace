@@ -25,6 +25,7 @@ AI agents. Content is optimized for precision and machine consumption.
 | See GA/TP/unsupported features | `what/feature-support-matrix.md` |
 | Understand log collection | `what/log-collection.md` |
 | Understand the Kubernetes event router | `what/event-router.md` |
+| OTEL-based event collection | `what/otel-event-collection.md` |
 | Understand log forwarding | `what/log-forwarding.md` |
 | Understand log storage | `what/log-storage.md` |
 | Understand the UI | `what/visualization.md` |
@@ -40,6 +41,7 @@ AI agents. Content is optimized for precision and machine consumption.
 | `what/system-overview.md` | `how/project-structure.md` |
 | `what/log-collection.md`, `what/log-forwarding.md` | `how/repo-map.md` → `cluster-logging-operator/` |
 | `what/event-router.md` | `how/repo-map.md` → `eventrouter/` |
+| `what/otel-event-collection.md` | `how/repo-map.md` → `redhat-opentelemetry-collector/exporter/eventrouterexporter` |
 | `what/log-storage.md` | `how/repo-map.md` → `loki/operator/` |
 | `what/visualization.md` | `how/repo-map.md` → `logging-view-plugin/` |
 | `what/log-file-metric-exporter.md` | `how/repo-map.md` → `log-file-metric-exporter/` |
