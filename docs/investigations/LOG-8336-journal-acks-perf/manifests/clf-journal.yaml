@@ -1,0 +1,38 @@
+apiVersion: observability.openshift.io/v1
+kind: ClusterLogForwarder
+metadata:
+  name: collector
+  namespace: openshift-logging
+  annotations:
+    observability.openshift.io/log-level: info
+spec:
+  serviceAccount:
+    name: logcollector
+  inputs:
+    - name: journal-only
+      type: infrastructure
+      infrastructure:
+        sources:
+          - node
+  outputs:
+    - name: lokistack-output
+      type: lokiStack
+      lokiStack:
+        target:
+          namespace: openshift-logging
+          name: lokistack-dev
+        authentication:
+          token:
+            from: serviceAccount
+        tuning:
+          deliveryMode: AtLeastOnce
+      tls:
+        ca:
+          key: service-ca.crt
+          configMapName: openshift-service-ca.crt
+  pipelines:
+    - name: journal
+      inputRefs:
+        - journal-only
+      outputRefs:
+        - lokistack-output

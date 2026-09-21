@@ -1,0 +1,57 @@
+# Privileged journal injector. Replace PLACEHOLDER_NODE with a worker node name, e.g.:
+#   sed 's/PLACEHOLDER_NODE/ip-10-0-1-18.ec2.internal/' journal-injector.yaml | oc apply -f -
+# WORKERS controls the number of parallel `logger` loops (journald node rate-limiting
+# caps effective throughput at ~1300 ev/s regardless of worker count).
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: journal-injector
+  namespace: openshift-logging
+  labels:
+    app: journal-injector
+spec:
+  selector:
+    matchLabels:
+      app: journal-injector
+  template:
+    metadata:
+      labels:
+        app: journal-injector
+        vector.dev/exclude: "true"
+    spec:
+      serviceAccountName: journal-injector
+      nodeSelector:
+        kubernetes.io/hostname: "PLACEHOLDER_NODE"
+      tolerations:
+        - operator: Exists
+      hostPID: true
+      containers:
+        - name: injector
+          image: registry.access.redhat.com/ubi9/ubi:latest
+          env:
+            - name: WORKERS
+              value: "8"
+            - name: RUN_ID
+              value: "ACKBENCH"
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              echo "starting $WORKERS injector workers"
+              for w in $(seq 1 "$WORKERS"); do
+                (
+                  s=1
+                  while true; do
+                    logger -t ACK_BENCH "$RUN_ID w=$w seq=$((s++))"
+                  done
+                ) &
+              done
+              wait
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: devlog
+              mountPath: /dev/log
+      volumes:
+        - name: devlog
+          hostPath:
+            path: /run/systemd/journal/dev-log
