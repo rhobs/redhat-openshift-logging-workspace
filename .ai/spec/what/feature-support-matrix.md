@@ -88,16 +88,16 @@ Authoritative reference for which features are supported and at what level. A fe
 
 ### Output Common Features
 
-| Feature | Status |
-|---|---|
-| TLS configuration (CA, cert, key, insecureSkipVerify) | GA |
-| TLS security profile selection | GA |
-| Rate limiting (maxRecordsPerSecond) | GA |
-| Delivery mode (AtLeastOnce / AtMostOnce) | GA |
-| Compression (gzip, snappy, zlib, zstd, lz4) | GA |
-| Max payload size (maxWrite) | GA |
-| Retry tuning (minRetryDuration, maxRetryDuration) | GA |
-| Dynamic field templating (`{.field.path}`) | GA |
+| Feature | Status | Notes |
+|---|---|---|
+| TLS configuration (CA, cert, key, insecureSkipVerify) | GA | |
+| TLS security profile selection | GA | |
+| Rate limiting (maxRecordsPerSecond) | GA | |
+| Delivery mode (AtLeastOnce / AtMostOnce) | GA | `AtLeastOnce` does not emit end-to-end sink acknowledgements by default; journald in-flight window lost on restart (`[PLANNED: LOG-7538]`, see log-forwarding.md rule 21) |
+| Compression (gzip, snappy, zlib, zstd, lz4) | GA | |
+| Max payload size (maxWrite) | GA | |
+| Retry tuning (minRetryDuration, maxRetryDuration) | GA | |
+| Dynamic field templating (`{.field.path}`) | GA | |
 
 ## Filter Types
 

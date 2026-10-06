@@ -81,3 +81,5 @@ The ClusterLogForwarder CR defines which logs are collected. The collector (Vect
 - The service account must have RBAC permissions for the log types it collects. The operator validates this and sets status conditions accordingly.
 - Receiver inputs are restricted to specific use cases (HyperShift, co-located Red Hat products). General-purpose external log ingestion is not supported.
 - Container log collection depends on the container runtime's log file format. Only CRI-O log format on OpenShift nodes is supported.
+- The journald (`node`) source advances its read checkpoint as records are read, independently of confirmed delivery to the output. Without end-to-end sink acknowledgements, the in-flight window is lost on collector restart (~5–10% of journal logs under backpressure). This is a durability property of the output's delivery mode — see `what/log-forwarding.md` rule 21 and `[PLANNED: LOG-7538]`.
+- The journald source read rate is capped by systemd journald rate-limiting (~1300 events/s per node in testing), independent of collector or workload tuning.
