@@ -33,6 +33,9 @@ The ClusterLogForwarder CR defines how collected logs are transformed and routed
 19. All outputs support TLS configuration: CA bundle, client certificate/key, key passphrase, `insecureSkipVerify`, and TLS security profile selection. `[GA]`
 20. All outputs support rate limiting via `limit.maxRecordsPerSecond`. `[GA]`
 21. All outputs support delivery mode: `AtLeastOnce` (default) or `AtMostOnce`. `[GA]`
+    - `AtLeastOnce` provisions a persistent **disk buffer** (256 MB per sink) with `when_full = block`: when the buffer fills, the sink applies backpressure to the source rather than dropping records. `[GA]`
+    - `AtMostOnce` uses an in-memory buffer that drops records when full. `[GA]`
+    - **Known limitation (journald):** stock `AtLeastOnce` does not emit a Vector sink `acknowledgements` block, so delivery is not acknowledged end-to-end. Because the journald source advances its read checkpoint independently of confirmed sink delivery, the in-flight window (records read but not yet durably delivered) is lost when the collector restarts — ~5–10% of journal logs under backpressure. Enabling sink `acknowledgements.enabled = true` closes this window. `[PLANNED: LOG-7538]` (investigated in LOG-8336; the fix is performance-neutral — see `docs/superpowers/specs/LOG-8336-journal-acks-perf.md`)
 22. All outputs support tuning: `maxWrite` (max payload size), `minRetryDuration`, `maxRetryDuration`. `[GA]`
 23. All outputs support compression (type varies by output: gzip, snappy, zlib, zstd, lz4). `[GA]`
 24. Many output fields support dynamic per-event values via template syntax: `{.field.path||"fallback"}`. `[GA]`
@@ -96,3 +99,4 @@ The ClusterLogForwarder CR defines how collected logs are transformed and routed
 - The `lokiStack` output type requires a LokiStack CR in the target namespace.
 - Template syntax (`{.field.path}`) availability varies by output type and field. Not all fields support templating.
 - The `otlp` output requires the Technology Preview annotation on the ClusterLogForwarder CR.
+- `AtLeastOnce` guarantees durability only up to the point the collector hands records to the sink's disk buffer; without end-to-end sink acknowledgements, records already read from a source (notably journald, whose checkpoint advances on read) but not yet durably delivered are lost on collector restart. See rule 21 and `[PLANNED: LOG-7538]`.

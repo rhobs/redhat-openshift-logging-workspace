@@ -1,0 +1,15 @@
+================ PHASE: A: ACKS OFF (stock 6.6 default)  (pod=collector-qtpxl, node=ip-10-0-1-18.ec2.internal, win=3m) ================
+collector pod                          collector-qtpxl
+journal read rate (ev/s)               1303.8333333333333
+sink delivered throughput (ev/s)       1303.9599999999998
+sink received rate (ev/s)              1303.8333333333333
+buffer events (current)                371
+buffer byte size (current)             706784
+avg loki request RTT (s)               0.03488783548275856
+avg in-flight requests                 0.5
+avg buffer send duration (s)           0.0016044888799136706
+sink component p50 latency (s)         NaN
+sink component p95 latency (s)         NaN
+collector CPU (cores)                  0.4309510025677971
+collector mem working set (bytes)      94089216
+
