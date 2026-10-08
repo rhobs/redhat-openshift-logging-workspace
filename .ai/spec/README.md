@@ -31,6 +31,7 @@ AI agents. Content is optimized for precision and machine consumption.
 | Understand the UI | `what/visualization.md` |
 | Understand the log file metric exporter | `what/log-file-metric-exporter.md` |
 | OTEL Collector migration | `what/otel-collector-migration.md` |
+| OTEL vs Vector perf benchmark | `what/otel-vs-vector-perf-benchmark.md` |
 | Find which repo owns a concern | `how/repo-map.md` |
 | Navigate the codebase | `how/project-structure.md` |
 
@@ -45,6 +46,7 @@ AI agents. Content is optimized for precision and machine consumption.
 | `what/visualization.md` | `how/repo-map.md` → `logging-view-plugin/` |
 | `what/log-file-metric-exporter.md` | `how/repo-map.md` → `log-file-metric-exporter/` |
 | `what/feature-support-matrix.md` | `how/repo-map.md` (cross-repo) |
+| `what/otel-vs-vector-perf-benchmark.md` | `what/otel-collector-migration.md` (related initiative) |
 
 ## Conventions
 
