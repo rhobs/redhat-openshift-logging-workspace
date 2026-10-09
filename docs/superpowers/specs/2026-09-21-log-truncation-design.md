@@ -104,44 +104,71 @@ Fuzzy JSON parser transform (audit logs only)
 
 ### ViaQ Envelope Extension
 
-**Before (normal log):**
-```json
-{
-  "message": "full log message here",
-  "kubernetes": {
-    "namespace": "my-app",
-    "pod": "pod-123",
-    "container": "app"
-  },
-  "@timestamp": "2026-09-21T10:00:00Z"
-}
+**Scenario: Audit log truncation example**
+
+**Without truncation (current behavior—message dropped entirely):**
+```
+No log record at all. The oversized audit event is silently discarded.
+Downstream systems never see the event, making compliance auditing and forensics impossible.
 ```
 
-**After (truncated application log):**
-```json
-{
-  "message": "partial log message up to limit..TRUNCATED",
-  "kubernetes": {
-    "namespace": "my-app",
-    "pod": "pod-123",
-    "container": "app"
-  },
-  "@timestamp": "2026-09-21T10:00:00Z"
-}
-```
+**With truncation and fuzzy JSON parsing (proposed behavior):**
 
-**After (truncated audit log with fuzzy parse success):**
+Original oversized audit log (1.2MB, exceeds 1MB limit):
 ```json
 {
-  "message": "truncated JSON bytes..TRUNCATED",
+  "apiVersion": "audit.k8s.io/v1",
+  "kind": "Event",
+  "level": "RequestResponse",
   "verb": "create",
-  "user": {"username": "admin"},
-  "objectRef": {"resource": "pods", "namespace": "default", "name": "test"},
+  "user": {"username": "admin@example.com", "groups": ["system:masters"]},
+  "sourceIPs": ["10.0.0.5"],
+  "userAgent": "kubectl/v1.29.0",
+  "objectRef": {
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "namespace": "production",
+    "name": "my-web-app-789abc",
+    "uid": "d1234567-89ab-cdef-0123-456789abcdef",
+    "resourceVersion": "12345678"
+  },
+  "requestObject": {"apiVersion": "v1", "kind": "Pod", "metadata": {"name": "my-web-app-789abc", ...}, "spec": {"containers": [{"name": "web", "image": "myimage:v1.2.3", "resources": {"limits": {"cpu": "500m", "memory": "512Mi"}, "requests": {"cpu": "250m", "memory": "256Mi"}}, "volumeMounts": [...500 more lines of YAML spec...]}}},
+  "responseStatus": {"code": 201, "message": ""},
+  "requestURI": "/api/v1/namespaces/production/pods",
+  "auditID": "d1234567-89ab-cdef-0123-456789abcdef",
+  "@timestamp": "2026-09-22T10:00:00Z"
+}
+```
+
+Truncated output (after fuzzy JSON parsing extracts key audit fields):
+```json
+{
+  "message": "{\"apiVersion\":\"audit.k8s.io/v1\",\"kind\":\"Event\",\"level\":\"RequestResponse\",\"verb\":\"create\",\"user\":{\"username\":\"admin@example.com\",\"groups\":[\"system:masters\"]},\"sourceIPs\":[\"10.0.0.5\"],\"userAgent\":\"kubectl/v1.29.0\",\"objectRef\":{\"apiVersion\":\"v1\",\"kind\":\"Pod\",\"namespace\":\"production\",\"name\":\"my-web-app-789abc\",\"uid\":\"d1234567-89ab-cdef-0123-456789abcdef\",\"resourceVersion\":..TRUNCATED",
+  "verb": "create",
+  "user": {"username": "admin@example.com", "groups": ["system:masters"]},
+  "sourceIPs": ["10.0.0.5"],
+  "userAgent": "kubectl/v1.29.0",
+  "objectRef": {
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "namespace": "production",
+    "name": "my-web-app-789abc",
+    "uid": "d1234567-89ab-cdef-0123-456789abcdef",
+    "resourceVersion": "12345678"
+  },
+  "responseStatus": {"code": 201},
+  "requestURI": "/api/v1/namespaces/production/pods",
+  "auditID": "d1234567-89ab-cdef-0123-456789abcdef",
   "structured_partial": true,
   "hostname": "node-1.example.com",
-  "@timestamp": "2026-09-21T10:00:00Z"
+  "@timestamp": "2026-09-22T10:00:00Z"
 }
 ```
+
+**Key differences:**
+- **Without truncation:** Event is lost entirely. No who, what, when, where information is captured. Compliance audit trails are incomplete.
+- **With truncation:** Key audit fields (`verb`, `user`, `objectRef`, `responseStatus`, `auditID`) are preserved even though the full resource spec is truncated. Downstream systems can still identify who performed what action on which resource and when, even if some details are missing. The `structured_partial: true` flag alerts consumers that this is incomplete data.
+
 Note: Parsed fields are merged into root, not nested in a `structured` object. This matches existing audit log parsing behavior.
 
 ## Scope of Change
