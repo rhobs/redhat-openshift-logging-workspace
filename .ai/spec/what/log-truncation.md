@@ -13,7 +13,7 @@ Audit logs present a special challenge: they are typically JSON-formatted, and t
 ### Message Size Limits
 
 1. **`maxMergedLineBytes`** limits the size of log messages after merging partial events. It applies to the **originating log message only** (the raw bytes read from the container log file or journal), not the enriched ViaQ envelope or other metadata added during processing.
-2. The default `maxMergedLineBytes` is 1MB for application and infrastructure container logs, and 16MB for audit logs.
+2. The default `maxMergedLineBytes` is **TBD** (pending analysis of real-world log sizes). Vector upstream has no default for `max_merged_line_bytes` (optional field). Defaults may differ by log type (application, infrastructure, audit) based on typical message sizes.
 3. Kubernetes container logs may be split into partial events by the container runtime. Vector automatically merges consecutive partial events into a single log record before applying the size limit.
 4. Vector has a hard buffer chunk size limit of 128MB. Messages exceeding this limit cannot be processed regardless of `maxMergedLineBytes` configuration. This is an upstream Vector constraint.
 
@@ -68,14 +68,14 @@ Audit logs present a special challenge: they are typically JSON-formatted, and t
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `spec.inputs[].application.tuning.maxMergedLineBytes` | string (bytes) | `1048576` (1MB) | Maximum size of a log message after merging Kubernetes partial events. Messages exceeding this limit are truncated. |
-| `spec.inputs[].infrastructure.tuning.maxMergedLineBytes` | string (bytes) | `1048576` (1MB) | Same as application, for infrastructure container logs. |
+| `spec.inputs[].application.tuning.maxMergedLineBytes` | string (bytes) | **TBD** | Maximum size of a log message after merging Kubernetes partial events. Messages exceeding this limit are truncated. |
+| `spec.inputs[].infrastructure.tuning.maxMergedLineBytes` | string (bytes) | **TBD** | Same as application, for infrastructure container logs. |
 
 ### Audit Inputs
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `spec.inputs[].audit.tuning.maxMergedLineBytes` | string (bytes) | `16777216` (16MB) | Maximum size of an audit log message after merging partial events. Higher default to accommodate large JSON audit events. Truncated audit logs are processed by the fuzzy JSON parser. |
+| `spec.inputs[].audit.tuning.maxMergedLineBytes` | string (bytes) | **TBD** | Maximum size of an audit log message after merging partial events. May use higher default to accommodate large JSON audit events. Truncated audit logs are processed by the fuzzy JSON parser. |
 
 ### Example Configuration
 
@@ -94,7 +94,7 @@ spec:
           matchLabels:
             app: my-verbose-app
         tuning:
-          maxMergedLineBytes: 131072     # 128KB limit (default is 1MB)
+          maxMergedLineBytes: 524288     # 512KB limit
     
     - name: my-audit-logs
       type: audit
@@ -103,7 +103,7 @@ spec:
           - kubeAPI
           - openshiftAPI
         tuning:
-          maxMergedLineBytes: 33554432   # 32MB limit (default is 16MB)
+          maxMergedLineBytes: 2097152    # 2MB limit
   
   pipelines:
     - name: forward-app-logs
@@ -164,18 +164,18 @@ The product documentation must include:
 
 ## Constraints
 
-- The truncation feature depends on Vector v0.54.0-rh or later (upstream PR #25567 merged in v0.58.0, cherry-picked into the Red Hat fork).
-- **Fuzzy JSON parsing requires new Vector code** (Rust transform implementation). This is new development work in the Red Hat fork of Vector, not proposed for upstream.
+- **Base truncation support**: Provided by Vector v0.54.0-rh or later (upstream PR #25567 merged in v0.58.0, cherry-picked into the Red Hat fork). This is already complete via LOG-9459.
+- **Fuzzy JSON parsing**: New development work in the Red Hat fork of Vector, not proposed for upstream. Can be implemented via VRL (fast) or native Rust (performant). Implementation approach TBD based on proof-of-concept results.
 - Truncation only applies to **merged partial log lines** from Kubernetes container logs. Individual log lines exceeding `maxMergedLineBytes` at the file read level are always dropped (Vector does not support file-level truncation yet).
 - The `..TRUNCATED` suffix is hardcoded by Vector and cannot be customized.
-- Fuzzy JSON parsing is best-effort. Complex nested JSON structures may not parse correctly if truncation occurs mid-structure.
+- Fuzzy JSON parsing is best-effort with >80% success target. Complex nested JSON structures may not parse correctly if truncation occurs mid-structure.
 - The fuzzy parser extracts a configurable set of audit fields with sensible defaults (see rule 11). Custom audit policies with deeply nested or non-standard fields may not be fully captured.
 
 ## Migration and Compatibility
 
 36. Upgrading to a version with this feature changes the **default behavior**: oversized messages are **truncated** instead of **dropped silently**. This is a behavioral change that preserves more data and improves observability.
 37. The current behavior (silent drops) cannot be restored via configuration. Truncation is always enabled as a defensive mechanism.
-38. The `maxMergedLineBytes` configuration field is **optional**. If omitted, defaults apply (1MB for application/infrastructure, 16MB for audit). Existing ClusterLogForwarder CRs without this field continue to work with the defaults.
+38. The `maxMergedLineBytes` configuration field is **optional**. If omitted, defaults apply (values TBD based on analysis of real-world log sizes). Existing ClusterLogForwarder CRs without this field continue to work with the defaults.
 39. The `structured_partial` field (for fuzzy-parsed audit logs) is a new field added to the root level. Downstream systems that do not recognize this field will ignore it. No breaking changes to existing log schemas.
 
 ## Implementation Notes (for `how/` reference)
@@ -185,33 +185,51 @@ The product documentation must include:
 - The CLF controller maps `spec.inputs[].{type}.tuning.maxMergedLineBytes` to Vector's `max_merged_line_bytes` config in the kubernetes_logs source.
 - The CLF controller sets Vector's `max_merged_line_action` to `truncate` (hardcoded, not user-configurable).
 - Vector's `max_line_bytes` (file reader) is set to the same value as `max_merged_line_bytes` to allow partial events through for merging.
-- Different defaults are applied based on input type: application (1MB), infrastructure (1MB), audit (16MB).
+- Different defaults may be applied based on input type (application, infrastructure, audit). Actual default values TBD based on real-world data analysis.
 
 ### Fuzzy JSON Parser Implementation
 
-- **Location**: New Vector transform in `src/transforms/audit_json_fuzzy_parser.rs` (Red Hat fork)
+- **Location**: New Vector transform (VRL-based or native Rust in `src/transforms/audit_json_fuzzy_parser.rs` in Red Hat fork)
 - **Integration point**: Inserted into the Vector pipeline after the kubernetes_logs source and partial event merger, before the ViaQ normalizer
 - **Activation**: Only applied to audit log streams (filtered by log type metadata)
+- **Implementation options**:
+  - **VRL (Vector Remap Language)**: Fast to implement, easier to iterate. May have higher latency for large payloads.
+  - **Native Rust**: Better performance (<5ms p99 target), more complex implementation. Use `serde_json::StreamDeserializer` for incremental parsing.
+  - **Decision**: Start with VRL proof-of-concept. Migrate to Rust if latency exceeds 10ms.
 - **Parser strategy**:
-  - Use a streaming JSON parser (e.g., `serde_json::StreamDeserializer`) that can handle incomplete input
+  - Use streaming/incremental JSON parser that can handle incomplete input
   - Extract fields as they are encountered, stop at first parse error
+  - Extract **complete key-value pairs only** (discard incomplete fields)
   - Special handling for known audit schema fields: extract `verb`, `user.username`, `objectRef.resource`, `objectRef.namespace`, `objectRef.name`, `responseStatus.code`, `requestURI`, `sourceIPs[0]`, `userAgent`, `auditID`
   - Merge extracted fields into the root level of the event (not a nested `.structured` object)
-  - Add `structured_partial: true` field to root when parsing succeeds
+  - Add `structured_partial: true` field to root when parsing succeeds (≥1 field extracted)
   - Return extracted fields as a flat map merged into the event root
 - **Error handling**: Parse failures are logged at debug level, not errors. Fallback to raw truncated bytes without modification.
+- **Edge cases**:
+  - Truncation mid-key (`{"verb": "create", "use`): Extract fields before incomplete key
+  - Truncation mid-value (`{"verb": "cre`): Fallback to raw bytes if first field is incomplete
+  - Truncation mid-nested-object: Extract parent object with available nested fields
+  - Truncation mid-array: Extract fields before array, skip incomplete array
+  - Success target: >80% of truncated audit logs extract ≥1 meaningful field
 
 ### Metrics Exposure
 
-- Metrics are exposed via Vector's existing metrics endpoint; no custom exporter needed.
-- The collector DaemonSet's ServiceMonitor scrapes the metrics.
-- Metric labels differ by log type:
-  - Application/infrastructure: namespace, pod, container
-  - Audit: hostname (node name)
-- New metrics added to Vector's internal events system:
-  - `message_truncated_total` (replaces Vector's `k8s_merged_line_truncated_total`)
-  - `audit_json_fuzzy_parse_attempts_total`
-  - `audit_json_fuzzy_parse_success_total`
+**Base truncation metric** (provided by upstream Vector via LOG-9459):
+- `message_truncated_total`: Counter incremented when a log is truncated
+- Labels differ by log type:
+  - Application/infrastructure: `namespace`, `pod`, `container`, `log_type`
+  - Audit: `hostname` (node name), `log_type`
+
+**Fuzzy parser metrics** (new in this spec, implementation-dependent):
+- `audit_json_fuzzy_parse_attempts_total`: Counter for fuzzy parse attempts on truncated audit logs
+- `audit_json_fuzzy_parse_success_total`: Counter for successful parses (≥1 field extracted)
+- Labels: `hostname` (node name where audit log originated)
+
+**Implementation notes:**
+- **VRL implementation**: Metrics incremented via `counter_increment()` VRL function in the transform
+- **Rust implementation**: Metrics emitted via Vector's internal events system (`emit!` macro)
+- Both approaches expose metrics at Vector's `/metrics` endpoint in Prometheus format
+- The collector DaemonSet's ServiceMonitor scrapes the metrics automatically
 
 ### Event Schema Changes
 
