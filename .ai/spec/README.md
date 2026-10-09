@@ -26,6 +26,7 @@ AI agents. Content is optimized for precision and machine consumption.
 | Understand log collection | `what/log-collection.md` |
 | Understand the Kubernetes event router | `what/event-router.md` |
 | Event router CVE reduction initiative | `what/eventrouter-cve-reduction.md` |
+| Log message truncation | `what/log-truncation.md` |
 | Understand log forwarding | `what/log-forwarding.md` |
 | Understand log storage | `what/log-storage.md` |
 | Understand the UI | `what/visualization.md` |
@@ -40,7 +41,7 @@ AI agents. Content is optimized for precision and machine consumption.
 | what/ | how/ |
 |---|---|
 | `what/system-overview.md` | `how/project-structure.md` |
-| `what/log-collection.md`, `what/log-forwarding.md` | `how/repo-map.md` → `cluster-logging-operator/` |
+| `what/log-collection.md`, `what/log-forwarding.md`, `what/log-truncation.md` | `how/repo-map.md` → `cluster-logging-operator/` |
 | `what/event-router.md`, `what/eventrouter-cve-reduction.md` | `how/repo-map.md` → `eventrouter/` |
 | `what/log-storage.md` | `how/repo-map.md` → `loki/operator/` |
 | `what/visualization.md` | `how/repo-map.md` → `logging-view-plugin/` |
