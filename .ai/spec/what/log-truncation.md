@@ -1,12 +1,12 @@
 # Log Message Truncation
 
-The collector supports truncating oversized log messages instead of dropping them silently. This preserves partial log content and improves observability when applications emit logs exceeding configured size limits. For structured logs (particularly JSON audit logs), a fuzzy parser attempts to extract valid fields from truncated content.
+The collector supports truncating oversized log messages instead of dropping them silently. This preserves partial log content and improves observability when applications emit logs exceeding configured size limits. Truncated messages retain their metadata (namespace, pod, container, hostname) and are marked with a truncation indicator.
 
 ## Problem Statement
 
-When container applications emit very long log lines or Kubernetes partial log events merge into messages exceeding size limits, the collector must decide how to handle them. Historically, the collector dropped oversized messages entirely, leading to silent data loss. This truncation feature provides an alternative: preserve the message content up to the configured limit, append a truncation marker, and emit metrics identifying the source.
+When container applications emit very long log lines or Kubernetes partial log events merge into messages exceeding size limits, the collector must decide how to handle them. Historically, the collector dropped oversized messages entirely, leading to silent data loss. This truncation feature provides an alternative: preserve the message content up to the configured limit, append a truncation marker, preserve all metadata fields, and emit metrics identifying the source.
 
-Audit logs present a special challenge: they are typically JSON-formatted, and truncating in the middle of a JSON structure renders the log unparseable by downstream systems. To address this, the collector implements fuzzy JSON parsing to extract as many valid fields as possible from truncated audit logs.
+Even for structured logs like JSON audit events, truncated messages provide value: the raw (truncated) message content is preserved along with all metadata fields (namespace, pod, hostname, timestamp, etc.), allowing downstream systems to parse what they can and identify the source of oversized logs.
 
 ## Behavioral Rules
 
@@ -31,36 +31,22 @@ Audit logs present a special challenge: they are typically JSON-formatted, and t
 
 8. Vector's file reader `max_line_bytes` is set to `maxMergedLineBytes` to allow partial events to be read and merged before truncation is applied at the merge stage.
 
-### Fuzzy JSON Parsing for Audit Logs
+### Truncation Marker
 
-9. After truncation occurs, a Vector transform applies fuzzy JSON parsing to extract structured fields from truncated audit logs.
-10. The fuzzy parser attempts to detect if the truncated content is JSON by checking for a leading `{` or `[` character.
-11. If JSON is detected, the parser attempts to extract valid JSON fields from the truncated bytes up to the truncation point. The parser:
-    - Parses valid key-value pairs that are complete before the truncation point
-    - Extracts key audit fields when present: `verb` (what action), `user.username` (who), `objectRef.resource`, `objectRef.namespace`, `objectRef.name` (what resource), `responseStatus.code` (outcome), `requestURI`, `sourceIPs[0]`, `userAgent`, `auditID` (correlation)
-    - These fields are the default set, selected based on analysis of Kubernetes audit event schema as the minimum viable set for forensic analysis and compliance queries
-    - The list of priority fields is configurable via the Vector transform configuration, allowing teams to add or reorder fields based on their compliance requirements
-    - Handles nested objects and arrays up to the truncation boundary
-    - Stops parsing at the first invalid/incomplete JSON token
-12. Successfully parsed JSON fields are merged into the root level of the log event (not a separate `.structured` field). This matches the current behavior for audit logs where JSON fields are parsed into the root.
-13. A `structured_partial` field (boolean) is added to the root level to indicate the structured data is incomplete due to truncation.
-14. The original truncated message bytes (with `..TRUNCATED` suffix) are preserved in the `message` field for fallback/debugging.
-15. If fuzzy JSON parsing fails (malformed JSON, no valid fields extracted before truncation point), the log is treated as a raw truncated message:
-    - No parsed fields are added to the root
-    - `message` field contains the truncated bytes with `..TRUNCATED` suffix
-    - No `structured_partial` marker is added
-16. Fuzzy JSON parsing only applies to **audit** log types. Application and infrastructure logs are not parsed for JSON structure during truncation.
+9. Truncated messages include a `..TRUNCATED` suffix appended to the message content, making it clear to downstream consumers that the message is incomplete.
+10. The truncation marker is part of the message field itself (not a separate metadata field).
 
 ### Truncated Content and ViaQ Envelope
 
-17. Truncated log messages are normalized and enriched with ViaQ envelope metadata like any other log record (namespace, pod, container for application/infrastructure logs; hostname/node for audit logs; timestamp, labels).
-18. For non-JSON or failed-parse truncated logs, the `message` field contains the truncated bytes with the `..TRUNCATED` suffix. Downstream structured log parsing may fail.
-19. For successfully fuzzy-parsed audit logs, downstream consumers receive:
-    - Extracted JSON fields merged into the root level of the event
-    - `structured_partial: true` field at root level
-    - `message` field with original truncated bytes
-    - Standard ViaQ metadata (hostname/node for audit logs, timestamp)
-20. Downstream consumers (Loki, Elasticsearch, Splunk, etc.) are responsible for handling the `structured_partial` indicator and incomplete message content appropriately.
+11. Truncated log messages are normalized and enriched with ViaQ envelope metadata like any other log record:
+    - Application/infrastructure logs: `namespace`, `pod`, `container`, `log_type`, `@timestamp`, labels
+    - Audit logs: `hostname` (node name), `log_type`, `@timestamp`
+12. The `message` field contains the truncated bytes with the `..TRUNCATED` suffix.
+13. All metadata fields are populated normally - truncation only affects the message content, not the envelope.
+14. Downstream consumers (Loki, Elasticsearch, Splunk, etc.) receive the truncated message along with complete metadata, allowing them to:
+    - Identify the source of truncated logs (namespace/pod or hostname)
+    - Parse what they can from the truncated message content
+    - Query for truncated messages using the `..TRUNCATED` suffix marker
 
 ## Configuration Surface
 
@@ -123,60 +109,56 @@ spec:
 
 ### Metrics
 
-21. The collector exposes a `message_truncated_total` counter metric for each truncated log message.
-22. The metric includes the following labels:
+15. The collector exposes a `message_truncated_total` counter metric for each truncated log message.
+16. The metric includes the following labels:
     - For application/infrastructure logs: `namespace`, `pod`, `container`, `log_type`
     - For audit logs: `hostname` (node name), `log_type`
-23. The collector exposes an `audit_json_fuzzy_parse_attempts_total` counter for each fuzzy JSON parse attempt on truncated audit logs (labeled by `hostname`).
-24. The collector exposes an `audit_json_fuzzy_parse_success_total` counter for successful fuzzy JSON parses (at least one valid field extracted, labeled by `hostname`).
-25. All metrics are available at the collector's metrics endpoint (`/metrics`) and scraped by the cluster monitoring stack.
+17. All metrics are available at the collector's metrics endpoint (`/metrics`) and scraped by the cluster monitoring stack.
+18. The `message_truncated_total` metric is displayed in the **Logging Collection Dashboard** to help operators identify sources of oversized logs.
 
 ### Collector Logs
 
-26. When a message is truncated, the collector logs a warning: `"Truncating frame larger than max_length. original_len=<size> max_length=<limit>"`.
-27. When fuzzy JSON parsing succeeds on a truncated audit log, the collector logs an info message: `"Fuzzy JSON parse extracted <N> fields from truncated audit log. audit_id=<id> hostname=<node>"`.
-28. When fuzzy JSON parsing fails on a truncated audit log, the collector logs a debug message: `"Fuzzy JSON parse failed for truncated audit log, falling back to raw bytes. hostname=<node>"`.
+19. When a message is truncated, the collector logs a warning: `"Truncating frame larger than max_length. original_len=<size> max_length=<limit>"`.
 
 ## User Guidance (Documentation Requirements)
 
 The product documentation must include:
 
-29. **Scope of limits**: `maxMergedLineBytes` applies to the **originating log message bytes only**, before ViaQ envelope enrichment. The final forwarded record size will be larger due to metadata.
-30. **Vector buffer constraint**: Vector has a hard 128MB buffer chunk size limit. Messages exceeding this limit cannot be processed. Users should keep `maxMergedLineBytes` well below 128MB. Recommended maximum: 64MB.
-31. **Identifying sources of oversized logs**: Use the `message_truncated_total` metric to identify which applications/nodes are generating truncated logs. Provide PromQL query examples:
+20. **Scope of limits**: `maxMergedLineBytes` applies to the **originating log message bytes only**, before ViaQ envelope enrichment. The final forwarded record size will be larger due to metadata.
+21. **Vector buffer constraint**: Vector has a hard 128MB buffer chunk size limit. Messages exceeding this limit cannot be processed. Users should keep `maxMergedLineBytes` well below 128MB. Recommended maximum: 64MB.
+22. **Identifying sources of oversized logs**: Use the `message_truncated_total` metric to identify which applications/nodes are generating truncated logs. The metric is displayed in the Logging Collection Dashboard. Provide PromQL query examples:
     - Application logs: `sum by (namespace, pod) (message_truncated_total{log_type="application"})`
     - Audit logs: `sum by (hostname) (message_truncated_total{log_type="audit"})`
-32. **Reducing log verbosity**: Guide users on application-side tuning:
+23. **Reducing log verbosity**: Guide users on application-side tuning:
     - Configure application log levels (DEBUG → INFO → WARN)
     - Limit stack trace depth in error logs
     - Use structured logging to separate large payloads into separate fields
     - Split multi-line logs into separate events at the application layer
-33. **Audit log truncation and fuzzy parsing**: Explain that:
+24. **Audit log truncation**: Explain that:
     - Audit logs are typically JSON-formatted and can be large (especially for create/update operations with full resource specs)
-    - When truncated, fuzzy JSON parsing attempts to extract key audit fields (`verb`, `user`, `objectRef`, etc.) and merge them into the root level
-    - Downstream queries should check for `structured_partial: true` to identify incomplete audit events
+    - When truncated, the raw message is preserved with `..TRUNCATED` suffix
+    - Metadata fields (hostname, timestamp, log_type) are fully populated
+    - Downstream systems can attempt to parse the truncated JSON if needed
     - Users can increase `maxMergedLineBytes` for audit logs to reduce truncation frequency
-34. **Truncation marker**: Truncated logs have a `..TRUNCATED` suffix appended to the `message` field. Downstream queries/alerts should account for this suffix when pattern-matching log content.
-35. **Querying partial audit logs**: Provide examples of how to query for partial audit logs:
-    - Loki: `{log_type="audit"} | json | structured_partial="true"`
-    - Elasticsearch: Query for documents with `structured_partial: true` field
-    - Explain that partial logs may be missing important fields like `responseStatus` if truncation occurred early
+25. **Truncation marker**: Truncated logs have a `..TRUNCATED` suffix appended to the `message` field. Downstream queries/alerts should account for this suffix when pattern-matching log content.
+26. **Querying truncated logs**: Provide examples of how to query for truncated logs:
+    - Loki: `{log_type="audit"} |= "..TRUNCATED"`
+    - Elasticsearch: Query for `message` field containing `..TRUNCATED`
+    - These queries help identify which applications or audit sources produce oversized logs
 
 ## Constraints
 
 - **Base truncation support**: Provided by Vector v0.54.0-rh or later (upstream PR #25567 merged in v0.58.0, cherry-picked into the Red Hat fork). This is already complete via LOG-9459.
-- **Fuzzy JSON parsing**: New development work in the Red Hat fork of Vector, not proposed for upstream. Can be implemented via VRL (fast) or native Rust (performant). Implementation approach TBD based on proof-of-concept results.
 - Truncation only applies to **merged partial log lines** from Kubernetes container logs. Individual log lines exceeding `maxMergedLineBytes` at the file read level are always dropped (Vector does not support file-level truncation yet).
 - The `..TRUNCATED` suffix is hardcoded by Vector and cannot be customized.
-- Fuzzy JSON parsing is best-effort with >80% success target. Complex nested JSON structures may not parse correctly if truncation occurs mid-structure.
-- The fuzzy parser extracts a configurable set of audit fields with sensible defaults (see rule 11). Custom audit policies with deeply nested or non-standard fields may not be fully captured.
+- Downstream systems are responsible for parsing truncated message content. The collector does not attempt to extract structured fields from truncated JSON.
 
 ## Migration and Compatibility
 
-36. Upgrading to a version with this feature changes the **default behavior**: oversized messages are **truncated** instead of **dropped silently**. This is a behavioral change that preserves more data and improves observability.
-37. The current behavior (silent drops) cannot be restored via configuration. Truncation is always enabled as a defensive mechanism.
-38. The `maxMergedLineBytes` configuration field is **optional**. If omitted, defaults apply (values TBD based on analysis of real-world log sizes). Existing ClusterLogForwarder CRs without this field continue to work with the defaults.
-39. The `structured_partial` field (for fuzzy-parsed audit logs) is a new field added to the root level. Downstream systems that do not recognize this field will ignore it. No breaking changes to existing log schemas.
+27. Upgrading to a version with this feature changes the **default behavior**: oversized messages are **truncated** instead of **dropped silently**. This is a behavioral change that preserves more data and improves observability.
+28. The current behavior (silent drops) cannot be restored via configuration. Truncation is always enabled as a defensive mechanism.
+29. The `maxMergedLineBytes` configuration field is **optional**. If omitted, defaults apply (values TBD based on analysis of real-world log sizes). Existing ClusterLogForwarder CRs without this field continue to work with the defaults.
+30. The `..TRUNCATED` suffix in the message field is the only schema change. Downstream systems that pattern-match on message content should account for this suffix. No new fields are added to the log schema.
 
 ## Implementation Notes (for `how/` reference)
 
@@ -187,54 +169,25 @@ The product documentation must include:
 - Vector's `max_line_bytes` (file reader) is set to the same value as `max_merged_line_bytes` to allow partial events through for merging.
 - Different defaults may be applied based on input type (application, infrastructure, audit). Actual default values TBD based on real-world data analysis.
 
-### Fuzzy JSON Parser Implementation
-
-- **Location**: New Vector transform (VRL-based or native Rust in `src/transforms/audit_json_fuzzy_parser.rs` in Red Hat fork)
-- **Integration point**: Inserted into the Vector pipeline after the kubernetes_logs source and partial event merger, before the ViaQ normalizer
-- **Activation**: Only applied to audit log streams (filtered by log type metadata)
-- **Implementation options**:
-  - **VRL (Vector Remap Language)**: Fast to implement, easier to iterate. May have higher latency for large payloads.
-  - **Native Rust**: Better performance (<5ms p99 target), more complex implementation. Use `serde_json::StreamDeserializer` for incremental parsing.
-  - **Decision**: Start with VRL proof-of-concept. Migrate to Rust if latency exceeds 10ms.
-- **Parser strategy**:
-  - Use streaming/incremental JSON parser that can handle incomplete input
-  - Extract fields as they are encountered, stop at first parse error
-  - Extract **complete key-value pairs only** (discard incomplete fields)
-  - Special handling for known audit schema fields: extract `verb`, `user.username`, `objectRef.resource`, `objectRef.namespace`, `objectRef.name`, `responseStatus.code`, `requestURI`, `sourceIPs[0]`, `userAgent`, `auditID`
-  - Merge extracted fields into the root level of the event (not a nested `.structured` object)
-  - Add `structured_partial: true` field to root when parsing succeeds (≥1 field extracted)
-  - Return extracted fields as a flat map merged into the event root
-- **Error handling**: Parse failures are logged at debug level, not errors. Fallback to raw truncated bytes without modification.
-- **Edge cases**:
-  - Truncation mid-key (`{"verb": "create", "use`): Extract fields before incomplete key
-  - Truncation mid-value (`{"verb": "cre`): Fallback to raw bytes if first field is incomplete
-  - Truncation mid-nested-object: Extract parent object with available nested fields
-  - Truncation mid-array: Extract fields before array, skip incomplete array
-  - Success target: >80% of truncated audit logs extract ≥1 meaningful field
-
 ### Metrics Exposure
 
-**Base truncation metric** (provided by upstream Vector via LOG-9459):
+**Truncation metric** (provided by upstream Vector via LOG-9459):
 - `message_truncated_total`: Counter incremented when a log is truncated
 - Labels differ by log type:
   - Application/infrastructure: `namespace`, `pod`, `container`, `log_type`
   - Audit: `hostname` (node name), `log_type`
+- Exposed at Vector's `/metrics` endpoint in Prometheus format
+- Scraped by the collector DaemonSet's ServiceMonitor
+- Displayed in the Logging Collection Dashboard
 
-**Fuzzy parser metrics** (new in this spec, implementation-dependent):
-- `audit_json_fuzzy_parse_attempts_total`: Counter for fuzzy parse attempts on truncated audit logs
-- `audit_json_fuzzy_parse_success_total`: Counter for successful parses (≥1 field extracted)
-- Labels: `hostname` (node name where audit log originated)
+### Dashboard Integration
 
-**Implementation notes:**
-- **VRL implementation**: Metrics incremented via `counter_increment()` VRL function in the transform
-- **Rust implementation**: Metrics emitted via Vector's internal events system (`emit!` macro)
-- Both approaches expose metrics at Vector's `/metrics` endpoint in Prometheus format
-- The collector DaemonSet's ServiceMonitor scrapes the metrics automatically
+- Add `message_truncated_total` metric to the Logging Collection Dashboard
+- Panel shows truncation rate by namespace/pod (for app/infra) and by hostname (for audit)
+- Helps operators identify sources of oversized logs
 
-### Event Schema Changes
+### Event Schema
 
-- Add optional `structured_partial: bool` field to the root level of audit log events
-- Field is only present when fuzzy JSON parsing succeeds on a truncated audit log
-- Field is omitted for non-truncated logs and for truncated logs where parsing failed
-- Parsed audit fields are merged into the root level (matching existing audit log parsing behavior)
-- No ViaQ envelope version bump required; this is an additive-only change
+- No new fields added to the log schema
+- Only change: `..TRUNCATED` suffix in the `message` field for truncated logs
+- All metadata fields (namespace, pod, container, hostname, timestamp) populated normally
