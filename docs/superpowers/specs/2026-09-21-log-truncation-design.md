@@ -49,7 +49,7 @@ The impact compounds for audit logs: they are JSON-formatted, and even a truncat
 | Configuration surface | Single `maxMergedLineBytes` field per input | Simplified from dual max_line + max_merged; avoids confusion; audit may get higher default than app/infra (TBD) |
 | Metrics granularity | Namespace/pod/container for app/infra; hostname for audit | Enables operators to identify sources of oversized logs; audit logs are node-scoped not pod-scoped |
 | Dashboard display | Show `message_truncated_total` in Logging Collection Dashboard | Operators need visibility into truncation without writing custom queries |
-| Vector buffer limit | Document 128MB hard limit | Upstream constraint; no code change, just user guidance |
+| Vector buffer limit | Document 128MB hard limit (126MB practical max) | Upstream constraint; account for metadata overhead; no code change, just user guidance |
 
 ## Architecture
 
@@ -242,11 +242,14 @@ spec:
 The product documentation must cover:
 
 1. **Scope of limits** — `maxMergedLineBytes` applies to **originating log message only**, not the enriched ViaQ envelope
-2. **Vector buffer constraint** — 128MB hard limit; keep `maxMergedLineBytes` well below (recommend max 64MB)
+2. **Vector buffer constraint** — 128MB hard limit; practical max 126MB to account for metadata overhead; keep `maxMergedLineBytes` well below (recommend max 64MB)
 3. **Identifying sources of oversized logs** — Use the Logging Collection Dashboard to view truncation metrics. PromQL examples:
    ```promql
-   # Top 10 namespaces with most truncated app logs
-   topk(10, sum by (namespace) (rate(message_truncated_total{log_type="application"}[5m])))
+   # Top 10 namespaces with most truncated app container logs
+   topk(10, sum by (namespace) (rate(message_truncated_total{log_type="application", log_source="container"}[5m])))
+   
+   # Truncated infrastructure journal logs by node
+   sum by (hostname) (message_truncated_total{log_type="infrastructure", log_source="journal"})
    
    # Truncated audit logs by node
    sum by (hostname) (message_truncated_total{log_type="audit"})
@@ -269,7 +272,7 @@ The product documentation must cover:
 |---|---|---|
 | Behavioral change (drop → truncate) breaks downstream | Truncation preserves more data, not less; only adds `..TRUNCATED` suffix to message; release notes document change |
 | Downstream systems can't parse truncated JSON | Acceptable; downstream can parse what they can; metadata (namespace, pod, hostname) fully preserved for identification |
-| Users set limits too high, hit 128MB Vector limit | Document recommended max (64MB); CLO could add validation warning for limits >64MB |
+| Users set limits too high, hit 128MB Vector limit | Document practical max (126MB) and recommended max (64MB); CLO could add validation warning for limits >64MB |
 | Audit logs missing details after truncation | Users can increase `maxMergedLineBytes` for audit; defaults chosen based on real-world data |
 | No way to revert to old drop behavior | Acceptable tradeoff; truncation is strictly better for observability; no valid use case for preferring silent drops |
 | Operators don't notice truncation | Dashboard displays `message_truncated_total` metric; operators can set alerts if needed |
@@ -300,7 +303,7 @@ The product documentation must cover:
 ## Open Questions
 
 1. **Target release** — Which OpenShift Logging version? (6.7, 6.8?)
-2. **Validation warning for high limits** — Should CLO warn when `maxMergedLineBytes > 64MB` (approaching 128MB Vector limit)?
+2. **Validation warning for high limits** — Should CLO warn when `maxMergedLineBytes > 64MB` (approaching 126MB practical limit)?
 3. **Default `maxMergedLineBytes` values** — What should the defaults be for different log types?
    - **Vector upstream**: `max_merged_line_bytes` has no default (optional field)
    - **Vector file-level default**: `max_line_bytes = 32KB` (but this is for individual lines, not merged)

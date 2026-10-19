@@ -15,7 +15,7 @@ Even for structured logs like JSON audit events, truncated messages provide valu
 1. **`maxMergedLineBytes`** limits the size of log messages after merging partial events. It applies to the **originating log message only** (the raw bytes read from the container log file or journal), not the enriched ViaQ envelope or other metadata added during processing.
 2. The default `maxMergedLineBytes` is **TBD** (pending analysis of real-world log sizes). Vector upstream has no default for `max_merged_line_bytes` (optional field). Defaults may differ by log type (application, infrastructure, audit) based on typical message sizes.
 3. Kubernetes container logs may be split into partial events by the container runtime. Vector automatically merges consecutive partial events into a single log record before applying the size limit.
-4. Vector has a hard buffer chunk size limit of 128MB. Messages exceeding this limit cannot be processed regardless of `maxMergedLineBytes` configuration. This is an upstream Vector constraint.
+4. Vector has a hard buffer chunk size limit of 128MB. To account for metadata overhead, the practical maximum for `maxMergedLineBytes` should be 126MB. Messages exceeding the buffer limit cannot be processed regardless of `maxMergedLineBytes` configuration. This is an upstream Vector constraint.
 
 ### Truncation Behavior
 
@@ -111,8 +111,9 @@ spec:
 
 15. The collector exposes a `message_truncated_total` counter metric for each truncated log message.
 16. The metric includes the following labels:
-    - For application/infrastructure logs: `namespace`, `pod`, `container`, `log_type`
-    - For audit logs: `hostname` (node name), `log_type`
+    - For application/infrastructure container logs: `namespace`, `pod`, `container`, `log_type`, `log_source`
+    - For infrastructure journal logs: `hostname`, `log_type`, `log_source`
+    - For audit logs: `hostname` (node name), `log_type`, `log_source`
 17. All metrics are available at the collector's metrics endpoint (`/metrics`) and scraped by the cluster monitoring stack.
 18. The `message_truncated_total` metric is displayed in the **Logging Collection Dashboard** to help operators identify sources of oversized logs.
 
@@ -125,9 +126,10 @@ spec:
 The product documentation must include:
 
 20. **Scope of limits**: `maxMergedLineBytes` applies to the **originating log message bytes only**, before ViaQ envelope enrichment. The final forwarded record size will be larger due to metadata.
-21. **Vector buffer constraint**: Vector has a hard 128MB buffer chunk size limit. Messages exceeding this limit cannot be processed. Users should keep `maxMergedLineBytes` well below 128MB. Recommended maximum: 64MB.
+21. **Vector buffer constraint**: Vector has a hard 128MB buffer chunk size limit. To account for metadata overhead, the practical maximum for `maxMergedLineBytes` is 126MB. Users should keep `maxMergedLineBytes` well below this limit. Recommended maximum: 64MB.
 22. **Identifying sources of oversized logs**: Use the `message_truncated_total` metric to identify which applications/nodes are generating truncated logs. The metric is displayed in the Logging Collection Dashboard. Provide PromQL query examples:
-    - Application logs: `sum by (namespace, pod) (message_truncated_total{log_type="application"})`
+    - Application container logs: `sum by (namespace, pod) (message_truncated_total{log_type="application", log_source="container"})`
+    - Infrastructure journal logs: `sum by (hostname) (message_truncated_total{log_type="infrastructure", log_source="journal"})`
     - Audit logs: `sum by (hostname) (message_truncated_total{log_type="audit"})`
 23. **Reducing log verbosity**: Guide users on application-side tuning:
     - Configure application log levels (DEBUG → INFO → WARN)
