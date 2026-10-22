@@ -45,7 +45,7 @@ The impact compounds for audit logs: they are JSON-formatted, and even a truncat
 | Default action | **Always truncate** (no user configuration) | Partial data > no data; defensive mechanism; no justification for allowing admins to prefer complete data loss |
 | Truncation marker | `..TRUNCATED` suffix (11 bytes, hardcoded by Vector) | Clear indicator for downstream consumers; cannot be customized (Vector upstream) |
 | Audit log handling | **Simple truncation** (no parsing) | Truncate raw message, preserve metadata; downstream systems parse if needed; avoids maintenance burden of fuzzy parser; no ambiguity about "relevant" fields |
-| File-level truncation | Not supported (drop only) | Vector upstream limitation; file reader can only drop oversized lines, not truncate them |
+| File-level truncation | Not supported (drop only) | Vector upstream limitation; file reader can only drop oversized lines, not truncate them. Truncation only works for kubernetes_logs source which has merge behavior. |
 | Configuration surface | Single `maxMessageSize` field per input | Simplified from dual max_line + max_merged; avoids confusion; audit may get higher default than app/infra |
 | Metrics granularity | Namespace/pod/container for app/infra; hostname for audit | Enables operators to identify sources of oversized logs; audit logs are node-scoped not pod-scoped |
 | Dashboard display | Show `message_truncated_total` in Logging Collection Dashboard | Operators need visibility into truncation without writing custom queries |
@@ -73,6 +73,7 @@ ClusterLogForwarder CR
 
 ### Truncation Processing Flow
 
+**For kubernetes_logs source (container logs with merge):**
 ```
 Container log file
   │
@@ -93,6 +94,25 @@ ViaQ normalizer
       ▼
 Forward to outputs (Loki, Elasticsearch, etc.)
 ```
+
+**For file source (journal, syslog - no merge):**
+```
+System log file
+  │
+  ▼
+Vector file reader (max_line_bytes)
+  ├── Line <= limit → pass through
+  └── Line > limit → DROP (no merge stage, no truncation possible)
+      │
+      ▼
+ViaQ normalizer
+  └── Enrich with metadata
+      │
+      ▼
+Forward to outputs
+```
+
+**TODO:** File source truncation support would require upstream Vector enhancement to add `truncate` action at file read level (similar to merge stage). Currently, oversized single-line logs from file source are silently dropped.
 
 ### ViaQ Envelope Behavior
 

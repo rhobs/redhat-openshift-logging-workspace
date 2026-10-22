@@ -151,7 +151,9 @@ The product documentation must include:
 ## Constraints
 
 - **Base truncation support**: Provided by Vector v0.54.0-rh or later (upstream PR #25567 merged in v0.58.0, cherry-picked into the Red Hat fork). This is already complete via LOG-9459.
-- Truncation applies to log messages after merging partial events from Kubernetes container logs. By setting `max_line_bytes = maxMessageSize`, lines up to the limit pass through the file reader and can be merged, then truncated at the merge stage if needed. This approach preserves message content rather than dropping it at the file read level.
+- **Truncation scope (current)**: Truncation with merge behavior works for **kubernetes_logs source only**. The `kubernetes_logs` source merges partial events from container logs, then applies truncation at the merge stage. File source logs (systemd journal, syslog) do not have merge behavior, so truncation cannot be applied to single-line messages from file source — oversized lines are dropped at the file read level.
+- **TODO (future enhancement)**: Add `truncate` action to Vector's file source to handle oversized single-line logs. This would allow truncation for non-containerized sources (audit logs from syslog, journal events). Requires upstream Vector enhancement to support this behavior at the file read level.
+- By configuring `max_line_bytes` to not exceed `maxMessageSize`, lines up to the limit pass through the file reader and can be merged (in kubernetes_logs), then truncated at the merge stage if needed. This approach preserves message content rather than dropping it at the file read level.
 - The `..TRUNCATED` suffix is hardcoded by Vector and cannot be customized.
 - Downstream systems are responsible for parsing truncated message content. The collector does not attempt to extract structured fields from truncated JSON.
 
