@@ -12,24 +12,24 @@ Even for structured logs like JSON audit events, truncated messages provide valu
 
 ### Message Size Limits
 
-1. **`maxMergedLineBytes`** limits the size of log messages after merging partial events. It applies to the **originating log message only** (the raw bytes read from the container log file or journal), not the enriched ViaQ envelope or other metadata added during processing.
-2. The default `maxMergedLineBytes` is **TBD** (pending analysis of real-world log sizes). Vector upstream has no default for `max_merged_line_bytes` (optional field). Defaults may differ by log type (application, infrastructure, audit) based on typical message sizes.
+1. **`maxMessageSize`** limits the size of log messages after merging partial events. It applies to the **originating log message only** (the raw bytes read from the container log file or journal), not the enriched ViaQ envelope or other metadata added during processing.
+2. The default `maxMessageSize` is **126MB** for all log types (application, infrastructure, audit). This matches the practical maximum imposed by Vector's 128MB buffer chunk size limit, accounting for metadata overhead. This represents the maximum message size the collector can handle without dropping messages.
 3. Kubernetes container logs may be split into partial events by the container runtime. Vector automatically merges consecutive partial events into a single log record before applying the size limit.
-4. Vector has a hard buffer chunk size limit of 128MB. To account for metadata overhead, the practical maximum for `maxMergedLineBytes` should be 126MB. Messages exceeding the buffer limit cannot be processed regardless of `maxMergedLineBytes` configuration. This is an upstream Vector constraint.
+4. Vector has a hard buffer chunk size limit of 128MB. To account for metadata overhead, the practical maximum for `maxMessageSize` should be 126MB. Messages exceeding the buffer limit cannot be processed regardless of `maxMessageSize` configuration. This is an upstream Vector constraint.
 
 ### Truncation Behavior
 
-5. When a merged log line exceeds `maxMergedLineBytes`, the collector always truncates the message (keeps the first N bytes up to the limit). The CLO sets Vector's `max_merged_line_action` to `truncate` as a defensive mechanism. Dropping logs entirely is not exposed as a configuration option.
+5. When a merged log line exceeds `maxMessageSize`, the collector always truncates the message (keeps the first N bytes up to the limit). The CLO sets Vector's `max_merged_line_action` to `truncate` as a defensive mechanism. Dropping logs entirely is not exposed as a configuration option.
 6. When a merged line exceeds the limit:
-   - The message content is truncated to `maxMergedLineBytes - 11` bytes, and a `..TRUNCATED` suffix (11 bytes) is appended, so the total output size is exactly `maxMergedLineBytes`.
+   - The message content is truncated to `maxMessageSize - 11` bytes, and a `..TRUNCATED` suffix (11 bytes) is appended, so the total output size is exactly `maxMessageSize`.
    - Any remaining partial events for the same log stream are discarded.
    - A metric counter is incremented (see Observability section).
    - A warning is logged by the collector.
-7. Individual log lines exceeding `maxMergedLineBytes` **at the file read level** are always dropped. File-level truncation is not currently supported by Vector.
+7. Individual log lines exceeding `maxMessageSize` **at the file read level** are always dropped. File-level truncation is not currently supported by Vector.
 
 ### File Reader Configuration
 
-8. Vector's file reader `max_line_bytes` is set to `maxMergedLineBytes` to allow partial events to be read and merged before truncation is applied at the merge stage.
+8. Vector's file reader `max_line_bytes` is configured to not exceed `maxMessageSize`. This ensures that individual log lines up to the configured limit can pass through the file reader and be merged with other partial events before truncation is applied at the merge stage.
 
 ### Truncation Marker
 
@@ -54,14 +54,14 @@ Even for structured logs like JSON audit events, truncated messages provide valu
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `spec.inputs[].application.tuning.maxMergedLineBytes` | string (bytes) | **TBD** | Maximum size of a log message after merging Kubernetes partial events. Messages exceeding this limit are truncated. |
-| `spec.inputs[].infrastructure.tuning.maxMergedLineBytes` | string (bytes) | **TBD** | Same as application, for infrastructure container logs. |
+| `spec.inputs[].application.tuning.maxMessageSize` | string (bytes) | `132120576` (126MB) | Maximum size of a log message after merging Kubernetes partial events. Messages exceeding this limit are truncated. |
+| `spec.inputs[].infrastructure.tuning.maxMessageSize` | string (bytes) | `132120576` (126MB) | Same as application, for infrastructure container logs. |
 
 ### Audit Inputs
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `spec.inputs[].audit.tuning.maxMergedLineBytes` | string (bytes) | **TBD** | Maximum size of an audit log message after merging partial events. May use higher default to accommodate large JSON audit events. Truncated audit logs are processed by the fuzzy JSON parser. |
+| `spec.inputs[].audit.tuning.maxMessageSize` | string (bytes) | `132120576` (126MB) | Maximum size of an audit log message after merging partial events. |
 
 ### Example Configuration
 
@@ -80,7 +80,7 @@ spec:
           matchLabels:
             app: my-verbose-app
         tuning:
-          maxMergedLineBytes: 524288     # 512KB limit
+          maxMessageSize: 524288     # 512KB limit
     
     - name: my-audit-logs
       type: audit
@@ -89,7 +89,7 @@ spec:
           - kubeAPI
           - openshiftAPI
         tuning:
-          maxMergedLineBytes: 2097152    # 2MB limit
+          maxMessageSize: 2097152    # 2MB limit
   
   pipelines:
     - name: forward-app-logs
@@ -125,8 +125,8 @@ spec:
 
 The product documentation must include:
 
-20. **Scope of limits**: `maxMergedLineBytes` applies to the **originating log message bytes only**, before ViaQ envelope enrichment. The final forwarded record size will be larger due to metadata.
-21. **Vector buffer constraint**: Vector has a hard 128MB buffer chunk size limit. To account for metadata overhead, the practical maximum for `maxMergedLineBytes` is 126MB. Users should keep `maxMergedLineBytes` well below this limit. Recommended maximum: 64MB.
+20. **Scope of limits**: `maxMessageSize` applies to the **originating log message bytes only**, before ViaQ envelope enrichment. The final forwarded record size will be larger due to metadata.
+21. **Vector buffer constraint**: Vector has a hard 128MB buffer chunk size limit. To account for metadata overhead, the practical maximum for `maxMessageSize` is 126MB. Users should keep `maxMessageSize` well below this limit. Recommended maximum: 64MB.
 22. **Identifying sources of oversized logs**: Use the `message_truncated_total` metric to identify which applications/nodes are generating truncated logs. The metric is displayed in the Logging Collection Dashboard. Provide PromQL query examples:
     - Application container logs: `sum by (namespace, pod) (message_truncated_total{log_type="application", log_source="container"})`
     - Infrastructure journal logs: `sum by (hostname) (message_truncated_total{log_type="infrastructure", log_source="journal"})`
@@ -141,7 +141,7 @@ The product documentation must include:
     - When truncated, the raw message is preserved with `..TRUNCATED` suffix
     - Metadata fields (hostname, timestamp, log_type) are fully populated
     - Downstream systems can attempt to parse the truncated JSON if needed
-    - Users can increase `maxMergedLineBytes` for audit logs to reduce truncation frequency
+    - Users can increase `maxMessageSize` for audit logs to reduce truncation frequency
 25. **Truncation marker**: Truncated logs have a `..TRUNCATED` suffix appended to the `message` field. Downstream queries/alerts should account for this suffix when pattern-matching log content.
 26. **Querying truncated logs**: Provide examples of how to query for truncated logs:
     - Loki: `{log_type="audit"} |= "..TRUNCATED"`
@@ -151,7 +151,7 @@ The product documentation must include:
 ## Constraints
 
 - **Base truncation support**: Provided by Vector v0.54.0-rh or later (upstream PR #25567 merged in v0.58.0, cherry-picked into the Red Hat fork). This is already complete via LOG-9459.
-- Truncation only applies to **merged partial log lines** from Kubernetes container logs. Individual log lines exceeding `maxMergedLineBytes` at the file read level are always dropped (Vector does not support file-level truncation yet).
+- Truncation applies to log messages after merging partial events from Kubernetes container logs. By setting `max_line_bytes = maxMessageSize`, lines up to the limit pass through the file reader and can be merged, then truncated at the merge stage if needed. This approach preserves message content rather than dropping it at the file read level.
 - The `..TRUNCATED` suffix is hardcoded by Vector and cannot be customized.
 - Downstream systems are responsible for parsing truncated message content. The collector does not attempt to extract structured fields from truncated JSON.
 
@@ -159,17 +159,17 @@ The product documentation must include:
 
 27. Upgrading to a version with this feature changes the **default behavior**: oversized messages are **truncated** instead of **dropped silently**. This is a behavioral change that preserves more data and improves observability.
 28. The current behavior (silent drops) cannot be restored via configuration. Truncation is always enabled as a defensive mechanism.
-29. The `maxMergedLineBytes` configuration field is **optional**. If omitted, defaults apply (values TBD based on analysis of real-world log sizes). Existing ClusterLogForwarder CRs without this field continue to work with the defaults.
+29. The `maxMessageSize` configuration field is **optional**. If omitted, defaults apply (values TBD based on analysis of real-world log sizes). Existing ClusterLogForwarder CRs without this field continue to work with the defaults.
 30. The `..TRUNCATED` suffix in the message field is the only schema change. Downstream systems that pattern-match on message content should account for this suffix. No new fields are added to the log schema.
 
 ## Implementation Notes (for `how/` reference)
 
 ### Vector Configuration Mapping
 
-- The CLF controller maps `spec.inputs[].{type}.tuning.maxMergedLineBytes` to Vector's `max_merged_line_bytes` config in the kubernetes_logs source.
+- The CLF controller maps `spec.inputs[].{type}.tuning.maxMessageSize` to Vector's `max_merged_line_bytes` config in the kubernetes_logs source.
 - The CLF controller sets Vector's `max_merged_line_action` to `truncate` (hardcoded, not user-configurable).
 - Vector's `max_line_bytes` (file reader) is set to the same value as `max_merged_line_bytes` to allow partial events through for merging.
-- Different defaults may be applied based on input type (application, infrastructure, audit). Actual default values TBD based on real-world data analysis.
+- The default is `maxMessageSize = 126MB` for all input types (application, infrastructure, audit). This preserves current behavior (no effective limit) while ensuring messages fit within Vector's 128MB buffer constraint accounting for metadata overhead.
 
 ### Metrics Exposure
 

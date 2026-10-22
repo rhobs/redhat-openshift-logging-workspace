@@ -46,7 +46,7 @@ The impact compounds for audit logs: they are JSON-formatted, and even a truncat
 | Truncation marker | `..TRUNCATED` suffix (11 bytes, hardcoded by Vector) | Clear indicator for downstream consumers; cannot be customized (Vector upstream) |
 | Audit log handling | **Simple truncation** (no parsing) | Truncate raw message, preserve metadata; downstream systems parse if needed; avoids maintenance burden of fuzzy parser; no ambiguity about "relevant" fields |
 | File-level truncation | Not supported (drop only) | Vector upstream limitation; file reader can only drop oversized lines, not truncate them |
-| Configuration surface | Single `maxMergedLineBytes` field per input | Simplified from dual max_line + max_merged; avoids confusion; audit may get higher default than app/infra (TBD) |
+| Configuration surface | Single `maxMessageSize` field per input | Simplified from dual max_line + max_merged; avoids confusion; audit may get higher default than app/infra |
 | Metrics granularity | Namespace/pod/container for app/infra; hostname for audit | Enables operators to identify sources of oversized logs; audit logs are node-scoped not pod-scoped |
 | Dashboard display | Show `message_truncated_total` in Logging Collection Dashboard | Operators need visibility into truncation without writing custom queries |
 | Vector buffer limit | Document 128MB hard limit (126MB practical max) | Upstream constraint; account for metadata overhead; no code change, just user guidance |
@@ -58,7 +58,7 @@ The impact compounds for audit logs: they are JSON-formatted, and even a truncat
 ```
 ClusterLogForwarder CR
   └── spec.inputs[].{type}.tuning
-      └── maxMergedLineBytes: "2MB"  (optional, defaults TBD)
+      └── maxMessageSize: "2MB"  (optional, defaults: 126MB)
          │
          ▼
     CLO reconciler
@@ -77,7 +77,7 @@ ClusterLogForwarder CR
 Container log file
   │
   ▼
-Vector file reader (max_line_bytes = max_merged_line_bytes)
+Vector file reader (max_line_bytes does not exceed maxMessageSize)
   ├── Line <= limit → pass through
   └── Line > limit → DROP (file-level truncation not supported)
       │
@@ -159,7 +159,7 @@ Truncated output (with metadata):
 
 | Repo | Changes |
 |---|---|
-| **cluster-logging-operator** | • Extend CLF API: add `tuning.maxMergedLineBytes` to input specs<br>• Update Vector config generation: map CLF field to Vector config, hardcode `max_merged_line_action: truncate`<br>• Different defaults per input type (app/infra/audit defaults TBD)<br>• Set `max_line_bytes` = `max_merged_line_bytes` to allow partial events through<br>• Add `message_truncated_total` metric to Logging Collection Dashboard |
+| **cluster-logging-operator** | • Update Vector config generation: map CLF `tuning.maxMessageSize` to Vector config, hardcode `max_merged_line_action: truncate`<br>• Set default `maxMessageSize = 126MB` for all input types (application, infrastructure, audit)<br>• Add `message_truncated_total` metric to Logging Collection Dashboard |
 | **redhat-openshift-logging-workspace** | • This design doc<br>• Canonical spec (`.ai/spec/what/log-truncation.md`)<br>• Update `.ai/spec/README.md` with spec link |
 | **redhat-openshift-logging-docs** | • User guide: truncation behavior, configuration examples<br>• Metrics guide: how to query truncated logs, identify sources<br>• Best practices: reducing log verbosity, sizing limits<br>• Dashboard: how to use truncation metrics to identify problem sources |
 
@@ -174,33 +174,33 @@ spec:
       type: application
       application:
         tuning:
-          maxMergedLineBytes: "512KB"      # override default (default TBD)
+          maxMessageSize: "512KB"      # override default (default 126MB)
     
     - name: my-audit
       type: audit
       audit:
         tuning:
-          maxMergedLineBytes: "2MB"        # override default (default TBD)
+          maxMessageSize: "2MB"        # override default (default 126MB)
 ```
 
 **Backward compatibility:**
 - Field is optional; existing CRs work without changes
-- Omitting field uses defaults (values TBD based on real-world data analysis)
+- Omitting field uses defaults (values set to 126MB on real-world data analysis)
 - Default behavior changes from silent drop to truncate (behavioral change, but preserves more data and improves observability)
 
 ## Migration Phases
 
 ### Phase 1: CLF API Extension
-1. Add `tuning.maxMergedLineBytes` field to CLF API
+1. Add `tuning.maxMessageSize` field to CLF API
 2. Update CRD schema and validation
 3. Generate API documentation
 4. Add unit tests for API validation
 
 ### Phase 2: CLO Reconciler Updates
-1. Map CLF `tuning.maxMergedLineBytes` to Vector config
+1. Map CLF `tuning.maxMessageSize` to Vector config
 2. Hardcode `max_merged_line_action: truncate` in generated Vector config
-3. Set `max_line_bytes` = `max_merged_line_bytes` to allow partial events through
-4. Add different defaults per input type (values TBD based on data analysis)
+3. Ensure `max_line_bytes` does not exceed `maxMessageSize` to allow partial events through for merging
+4. Add different defaults per input type (values set to 126MB on data analysis)
 5. Integration tests: CLF CR → Vector config verification
 
 ### Phase 3: Dashboard Integration
@@ -241,8 +241,8 @@ spec:
 
 The product documentation must cover:
 
-1. **Scope of limits** — `maxMergedLineBytes` applies to **originating log message only**, not the enriched ViaQ envelope
-2. **Vector buffer constraint** — 128MB hard limit; practical max 126MB to account for metadata overhead; keep `maxMergedLineBytes` well below (recommend max 64MB)
+1. **Scope of limits** — `maxMessageSize` applies to **originating log message only**, not the enriched ViaQ envelope
+2. **Vector buffer constraint** — 128MB hard limit; practical max 126MB to account for metadata overhead; keep `maxMessageSize` well below (recommend max 64MB)
 3. **Identifying sources of oversized logs** — Use the Logging Collection Dashboard to view truncation metrics. PromQL examples:
    ```promql
    # Top 10 namespaces with most truncated app container logs
@@ -259,7 +259,7 @@ The product documentation must cover:
    - Audit logs can be large JSON events (especially create/update with full resource specs)
    - Truncated audit logs preserve metadata (hostname, timestamp) and raw message up to limit
    - Downstream systems can parse the truncated JSON if needed
-   - Users can increase `maxMergedLineBytes` for audit logs
+   - Users can increase `maxMessageSize` for audit logs
 6. **Truncation marker** — `..TRUNCATED` suffix for downstream query patterns
 7. **Querying truncated logs** — Loki/ES examples:
    - Loki: `{log_type="audit"} |= "..TRUNCATED"`
@@ -273,7 +273,7 @@ The product documentation must cover:
 | Behavioral change (drop → truncate) breaks downstream | Truncation preserves more data, not less; only adds `..TRUNCATED` suffix to message; release notes document change |
 | Downstream systems can't parse truncated JSON | Acceptable; downstream can parse what they can; metadata (namespace, pod, hostname) fully preserved for identification |
 | Users set limits too high, hit 128MB Vector limit | Document practical max (126MB) and recommended max (64MB); CLO could add validation warning for limits >64MB |
-| Audit logs missing details after truncation | Users can increase `maxMergedLineBytes` for audit; defaults chosen based on real-world data |
+| Audit logs missing details after truncation | Users can increase `maxMessageSize` for audit; defaults chosen based on real-world data |
 | No way to revert to old drop behavior | Acceptable tradeoff; truncation is strictly better for observability; no valid use case for preferring silent drops |
 | Operators don't notice truncation | Dashboard displays `message_truncated_total` metric; operators can set alerts if needed |
 
@@ -303,8 +303,8 @@ The product documentation must cover:
 ## Open Questions
 
 1. **Target release** — Which OpenShift Logging version? (6.7, 6.8?)
-2. **Validation warning for high limits** — Should CLO warn when `maxMergedLineBytes > 64MB` (approaching 126MB practical limit)?
-3. **Default `maxMergedLineBytes` values** — What should the defaults be for different log types?
+2. **Validation warning for high limits** — Should CLO warn when `maxMessageSize > 64MB` (approaching 126MB practical limit)?
+3. **Default `maxMessageSize` values** — What should the defaults be for different log types?
    - **Vector upstream**: `max_merged_line_bytes` has no default (optional field)
    - **Vector file-level default**: `max_line_bytes = 32KB` (but this is for individual lines, not merged)
    - **Needs analysis**: Real-world merged log sizes in OpenShift clusters (app, infra, audit)
