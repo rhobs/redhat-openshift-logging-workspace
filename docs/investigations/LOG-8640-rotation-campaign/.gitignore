@@ -1,0 +1,5 @@
+# Raw receiver event dumps — the input analyze.py calculates report.json /
+# summary.json from. ~848MB total, dominated by the four phase-1 variants
+# (1KB-payload runs = millions of events). Excluded from git; the calculated
+# results ARE committed. To regenerate a dump, re-run the variant (README.md).
+artifacts/*/events.jsonl

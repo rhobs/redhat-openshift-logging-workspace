@@ -1,0 +1,39 @@
+{
+  "variant": "cooldown-15000",
+  "loss": {
+    "streams": 98,
+    "collected": 1671700,
+    "missing": 0,
+    "duplicates": 0,
+    "loss_percent": 0.0,
+    "unparsed_lines": 98
+  },
+  "latency_s": {
+    "count": 1671700,
+    "mean_s": 0.439,
+    "p50_s": 0.2,
+    "p95_s": 0.467,
+    "p99_s": 9.363,
+    "max_s": 16.225
+  },
+  "cpu_cores_test_node": {
+    "avg": 0.646,
+    "max": 0.948
+  },
+  "mem_bytes_test_node": {
+    "avg": 360228137.29,
+    "max": 499666944.0
+  },
+  "events_in_per_sec_summed": {
+    "avg": 3405.156,
+    "max": 4923.833
+  },
+  "bytes_in_per_sec_summed": {
+    "avg": 10176253.809,
+    "max": 14715792.833
+  },
+  "files_added_6m_summed": {
+    "avg": 76.25,
+    "max": 110.144
+  }
+}

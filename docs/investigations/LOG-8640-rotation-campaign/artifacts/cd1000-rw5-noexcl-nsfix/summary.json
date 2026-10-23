@@ -1,0 +1,39 @@
+{
+  "variant": "cd1000-rw5-noexcl-nsfix",
+  "loss": {
+    "streams": 98,
+    "collected": 33771,
+    "missing": 0,
+    "duplicates": 57,
+    "loss_percent": 0.0,
+    "unparsed_lines": 99
+  },
+  "latency_s": {
+    "count": 33828,
+    "mean_s": 1.492,
+    "p50_s": 1.084,
+    "p95_s": 2.979,
+    "p99_s": 6.402,
+    "max_s": 139.367
+  },
+  "cpu_cores_test_node": {
+    "avg": 0.522,
+    "max": 0.788
+  },
+  "mem_bytes_test_node": {
+    "avg": 377442552.242,
+    "max": 490721280.0
+  },
+  "events_in_per_sec_summed": {
+    "avg": 2370.752,
+    "max": 3343.3
+  },
+  "bytes_in_per_sec_summed": {
+    "avg": 23391179.151,
+    "max": 32993726.367
+  },
+  "files_added_6m_summed": {
+    "avg": 478.098,
+    "max": 726.55
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "variant": "rot-rw5-excl",
+  "loss": {
+    "streams": 98,
+    "collected": 33401,
+    "missing": 239,
+    "duplicates": 0,
+    "loss_percent": 0.7105,
+    "unparsed_lines": 97
+  },
+  "latency_s": {
+    "count": 33401,
+    "mean_s": 1.624,
+    "p50_s": 0.516,
+    "p95_s": 8.63,
+    "p99_s": 13.669,
+    "max_s": 19.611
+  },
+  "cpu_cores_test_node": {
+    "avg": 0.474,
+    "max": 0.758
+  },
+  "mem_bytes_test_node": {
+    "avg": 370167932.121,
+    "max": 607543296.0
+  },
+  "events_in_per_sec_summed": {
+    "avg": 2176.389,
+    "max": 3325.189
+  },
+  "bytes_in_per_sec_summed": {
+    "avg": 21473927.737,
+    "max": 32811966.901
+  },
+  "files_added_6m_summed": {
+    "avg": 458.348,
+    "max": 727.991
+  }
+}
