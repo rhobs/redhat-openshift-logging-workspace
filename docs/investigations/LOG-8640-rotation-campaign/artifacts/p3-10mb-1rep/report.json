@@ -1,0 +1,41 @@
+{
+  "streams": 1,
+  "total_collected": 40,
+  "total_expected_window": 166,
+  "total_missing": 126,
+  "total_duplicates": 0,
+  "unparsed_lines": 2,
+  "loss_percent": 75.9036,
+  "latency": {
+    "count": 40,
+    "mean_s": 119.018,
+    "p50_s": 119.337,
+    "p95_s": 193.019,
+    "p99_s": 194.023,
+    "max_s": 194.023
+  },
+  "per_stream": [
+    {
+      "file": "test-workload_log-generator-79bfd648cc-dlvwg_log-generator",
+      "collected": 40,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        165
+      ],
+      "missing_count": 126,
+      "first_missing": [
+        6,
+        7,
+        8,
+        9,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ]
+    }
+  ]
+}

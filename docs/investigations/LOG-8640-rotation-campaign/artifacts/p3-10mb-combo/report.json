@@ -1,0 +1,52 @@
+{
+  "streams": 3,
+  "total_collected": 46,
+  "total_expected_window": 46,
+  "total_missing": 0,
+  "total_duplicates": 0,
+  "unparsed_lines": 3,
+  "loss_percent": 0.0,
+  "latency": {
+    "count": 46,
+    "mean_s": 241.612,
+    "p50_s": 240.465,
+    "p95_s": 258.187,
+    "p99_s": 259.235,
+    "max_s": 259.235
+  },
+  "per_stream": [
+    {
+      "file": "test-workload_log-generator-6d88c96667-vpkpr_log-generator",
+      "collected": 2,
+      "duplicates": 0,
+      "seqid_range": [
+        1,
+        2
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-79bfd648cc-bw8hg_log-generator",
+      "collected": 5,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        4
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-79bfd648cc-x9g7d_log-generator",
+      "collected": 39,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        38
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    }
+  ]
+}

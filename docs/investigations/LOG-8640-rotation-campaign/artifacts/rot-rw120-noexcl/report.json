@@ -1,0 +1,1097 @@
+{
+  "streams": 98,
+  "total_collected": 33635,
+  "total_expected_window": 33635,
+  "total_missing": 0,
+  "total_duplicates": 0,
+  "unparsed_lines": 17476,
+  "loss_percent": 0.0,
+  "latency": {
+    "count": 33635,
+    "mean_s": 1.77,
+    "p50_s": 0.596,
+    "p95_s": 9.44,
+    "p99_s": 14.201,
+    "max_s": 19.598
+  },
+  "per_stream": [
+    {
+      "file": "test-workload_log-generator-6d88c96667-2h4sd_log-generator",
+      "collected": 334,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        333
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-2kkj8_log-generator",
+      "collected": 331,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        330
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-2lsfm_log-generator",
+      "collected": 347,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        346
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-2wbd2_log-generator",
+      "collected": 346,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        345
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-4lpzm_log-generator",
+      "collected": 332,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        331
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-5p8rc_log-generator",
+      "collected": 333,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        332
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-627vp_log-generator",
+      "collected": 336,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        335
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-62lk9_log-generator",
+      "collected": 330,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        329
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-69tms_log-generator",
+      "collected": 347,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        346
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-6gsp2_log-generator",
+      "collected": 349,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        348
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-6sf5l_log-generator",
+      "collected": 349,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        348
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-74qrp_log-generator",
+      "collected": 349,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        348
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-768mk_log-generator",
+      "collected": 352,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        351
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-7jltk_log-generator",
+      "collected": 349,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        348
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-7mbfn_log-generator",
+      "collected": 347,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        346
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-7pxzn_log-generator",
+      "collected": 347,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        346
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-89w78_log-generator",
+      "collected": 353,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        352
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-8crq5_log-generator",
+      "collected": 353,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        352
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-8g6lv_log-generator",
+      "collected": 353,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        352
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-8sv7n_log-generator",
+      "collected": 348,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        347
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-8xhfp_log-generator",
+      "collected": 348,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        347
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-96sjx_log-generator",
+      "collected": 338,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        337
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-9gqlm_log-generator",
+      "collected": 350,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        349
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-9jdkd_log-generator",
+      "collected": 348,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        347
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-9lgfp_log-generator",
+      "collected": 332,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        331
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-9wzkx_log-generator",
+      "collected": 338,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        337
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-bbvfn_log-generator",
+      "collected": 337,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        336
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-bf87f_log-generator",
+      "collected": 346,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        345
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-bgcfb_log-generator",
+      "collected": 350,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        349
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-bp272_log-generator",
+      "collected": 347,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        346
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-c798q_log-generator",
+      "collected": 349,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        348
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-c99p7_log-generator",
+      "collected": 354,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        353
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-cd6nh_log-generator",
+      "collected": 351,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        350
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-cq9c4_log-generator",
+      "collected": 334,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        333
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-crs48_log-generator",
+      "collected": 333,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        332
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-cvxmn_log-generator",
+      "collected": 335,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        334
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-d5mlm_log-generator",
+      "collected": 337,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        336
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-db267_log-generator",
+      "collected": 350,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        349
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-ds7qs_log-generator",
+      "collected": 348,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        347
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-dv728_log-generator",
+      "collected": 350,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        349
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-f44g2_log-generator",
+      "collected": 350,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        349
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-fdhbb_log-generator",
+      "collected": 355,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        354
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-g76cv_log-generator",
+      "collected": 337,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        336
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-gccqd_log-generator",
+      "collected": 351,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        350
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-gps4g_log-generator",
+      "collected": 348,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        347
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-gq56m_log-generator",
+      "collected": 337,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        336
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-gqxwf_log-generator",
+      "collected": 330,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        329
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-gx9mh_log-generator",
+      "collected": 338,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        337
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-h5jnn_log-generator",
+      "collected": 331,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        330
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-j2cg4_log-generator",
+      "collected": 333,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        332
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-jb2l2_log-generator",
+      "collected": 350,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        349
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-jkbs2_log-generator",
+      "collected": 332,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        331
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-jrsls_log-generator",
+      "collected": 348,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        347
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-jzrxb_log-generator",
+      "collected": 335,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        334
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-kpm6c_log-generator",
+      "collected": 349,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        348
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-kpv57_log-generator",
+      "collected": 336,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        335
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-l4xh6_log-generator",
+      "collected": 336,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        335
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-lf2s8_log-generator",
+      "collected": 332,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        331
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-lgrzl_log-generator",
+      "collected": 348,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        347
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-lnqjv_log-generator",
+      "collected": 349,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        348
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-lws65_log-generator",
+      "collected": 331,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        330
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-m5kfn_log-generator",
+      "collected": 331,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        330
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-mdktd_log-generator",
+      "collected": 337,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        336
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-mn99m_log-generator",
+      "collected": 336,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        335
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-mtfbg_log-generator",
+      "collected": 354,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        353
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-mzsx8_log-generator",
+      "collected": 349,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        348
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-n4c9x_log-generator",
+      "collected": 353,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        352
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-n6gcm_log-generator",
+      "collected": 354,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        353
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-n7qwq_log-generator",
+      "collected": 355,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        354
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-ncrb6_log-generator",
+      "collected": 333,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        332
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-nw8m8_log-generator",
+      "collected": 338,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        337
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-p4wdb_log-generator",
+      "collected": 349,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        348
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-pf2hv_log-generator",
+      "collected": 331,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        330
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-prmv4_log-generator",
+      "collected": 352,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        351
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-q5cnh_log-generator",
+      "collected": 357,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        356
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-qp728_log-generator",
+      "collected": 352,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        351
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-qt8qg_log-generator",
+      "collected": 347,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        346
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-r78tc_log-generator",
+      "collected": 336,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        335
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-r9cc2_log-generator",
+      "collected": 348,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        347
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-rfc5c_log-generator",
+      "collected": 336,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        335
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-rnp2t_log-generator",
+      "collected": 334,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        333
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-rvh7s_log-generator",
+      "collected": 350,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        349
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-s6fbd_log-generator",
+      "collected": 349,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        348
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-s9js6_log-generator",
+      "collected": 351,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        350
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-sbccm_log-generator",
+      "collected": 329,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        328
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-t85qt_log-generator",
+      "collected": 333,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        332
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-tj4nq_log-generator",
+      "collected": 347,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        346
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-tk8cm_log-generator",
+      "collected": 351,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        350
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-v887g_log-generator",
+      "collected": 335,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        334
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-vmvmh_log-generator",
+      "collected": 347,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        346
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-vpq5f_log-generator",
+      "collected": 336,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        335
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-vtmkc_log-generator",
+      "collected": 352,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        351
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-w8nt7_log-generator",
+      "collected": 346,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        345
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-w8wp2_log-generator",
+      "collected": 348,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        347
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-wxvcq_log-generator",
+      "collected": 333,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        332
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-x4hgn_log-generator",
+      "collected": 348,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        347
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-zx72b_log-generator",
+      "collected": 348,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        347
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    },
+    {
+      "file": "test-workload_log-generator-6d88c96667-zx9p6_log-generator",
+      "collected": 334,
+      "duplicates": 0,
+      "seqid_range": [
+        0,
+        333
+      ],
+      "missing_count": 0,
+      "first_missing": []
+    }
+  ]
+}
