@@ -48,6 +48,9 @@ After brainstorming writes and commits a spec change, **auto-push and open a PR*
 
 If any step fails, stop and report the error to the user — do not retry or work around it.
 
+### Worktrees
+When using git worktrees, root them in a `worktrees/` directory at the workspace root (e.g. `worktrees/<branch-or-topic>/`). The directory is gitignored — never commit worktree contents. Before creating a worktree, check whether you are already in one (`git rev-parse --git-dir` vs `git rev-parse --git-common-dir`); if so, reuse it rather than nesting another.
+
 ### Per-Repo Context
 Each repo's `AGENTS.md` is authoritative for that repo. This file provides the map; the repo-level files provide the territory. Always read the target repo's `AGENTS.md` before making changes there.
 

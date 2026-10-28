@@ -9,4 +9,5 @@ openshift-logging-e2e-tests/
 release/
 vector/
 
+worktrees/
 .claude/settings.local.json
