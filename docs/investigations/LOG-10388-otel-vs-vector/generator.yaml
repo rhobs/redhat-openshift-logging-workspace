@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: loadgen
+  labels:
+    kubernetes.io/metadata.name: loadgen
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: load-client
+  namespace: loadgen
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: load-client
+  template:
+    metadata:
+      labels:
+        app: load-client
+    spec:
+      containers:
+        - name: load-client
+          image: quay.io/openshift-logging/cluster-logging-load-client:latest
+          args:
+            - --synthetic-payload-size=512
+            - --log-format=default
+            - --logs-per-second=1000

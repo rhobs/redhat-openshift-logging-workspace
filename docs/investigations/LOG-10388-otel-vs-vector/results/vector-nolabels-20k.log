@@ -1,0 +1,25 @@
+[14:32:03] drain gate: waiting for quiescence
+[14:32:35] drain: wal=3Mi collector_reads=0/s wal_ok=1 src_ok=1
+[14:32:35] drained
+deployment.apps/load-client patched
+[14:32:38] tag=p1_vector-nolabels_20000 rate=20000 npods=4 perpod=5000: rolling out
+[14:33:46] generator log-rate sample: 5561/s per pod (target 5000; undercounts at high rates due to rotation)
+[14:33:46] warm-up 180s
+[14:36:46] steady state 600s
+[14:47:34] emitted cross-check: nominal=12000000 seq_delta=12760000 (6.3% off)
+[14:47:34] vector source reads in window: 11997004
+[14:47:36] tag=p1_vector-nolabels_20000 DONE: emitted=12000000 delivered=11990000 loss=0.08% cpu_med=1436m cpu_max=1503m mem_med=511Mi mem_max=540Mi
+[14:47:36] drain gate: waiting for quiescence
+[14:48:08] drain: wal=24979Mi collector_reads=8170/s wal_ok=0 src_ok=0
+[14:48:42] drain: wal=11460Mi collector_reads=0/s wal_ok=0 src_ok=1
+[14:49:14] drain: wal=11708Mi collector_reads=0/s wal_ok=0 src_ok=1
+[14:49:47] drain: wal=11932Mi collector_reads=0/s wal_ok=0 src_ok=1
+[14:50:19] drain: wal=11932Mi collector_reads=0/s wal_ok=0 src_ok=1
+[14:50:51] drain: wal=12103Mi collector_reads=0/s wal_ok=0 src_ok=1
+[14:51:23] drain: wal=12103Mi collector_reads=0/s wal_ok=0 src_ok=1
+[14:51:54] drain: wal=12103Mi collector_reads=0/s wal_ok=0 src_ok=1
+[14:52:26] drain: wal=12105Mi collector_reads=0/s wal_ok=0 src_ok=1
+[14:52:58] drain: wal=12189Mi collector_reads=0/s wal_ok=0 src_ok=1
+[14:53:30] drain: wal=729Mi collector_reads=0/s wal_ok=1 src_ok=1
+[14:53:30] drained
+finalized p1_vector-nolabels_20000: delivered=11990000 loss=0.08%

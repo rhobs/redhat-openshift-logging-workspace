@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-opentelemetry-collector
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: openshift-opentelemetry-collector
+  namespace: openshift-opentelemetry-collector
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: opentelemetry-product
+  namespace: openshift-opentelemetry-collector
+spec:
+  channel: stable
+  name: opentelemetry-product
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+---
+# OTEL collector for LOG-10388 bench. v1beta1 (current product API, structured
+# config; v1alpha1 is deprecated). Components per RHOSDT spec support levels:
+# file_log receiver (GA), k8s_attributes (GA), memory_limiter + batch (GA,
+# documented resilience guidance — without them a Loki outage OOM-kills the
+# collector and drops batches), otlp_http exporter (GA), bearertokenauth (GA).
+#
+# One-time setup (ALL required — each was a hard failure without it):
+#   oc adm policy add-cluster-role-to-user cluster-logging-write-application-logs \
+#     -z otel-collector-collector -n openshift-opentelemetry-collector   # else 403 at gateway
+#   oc adm policy add-scc-to-user logging-scc -z otel-collector-collector \
+#     -n openshift-opentelemetry-collector   # else DS pods Forbidden (hostPath + spc_t)
+#   oc apply -f otelc-rbac.yaml   # pods get/list/watch for k8s_attributes
+#
+# securityContext runAsUser: 0 + seLinuxOptions type spc_t are REQUIRED to read
+# /var/log/pods (drwxr-x--- root:root; vector DS does the same via spc_t).
+# LokiStack OTLP label mapping converts ONLY k8s.* resource attrs to labels:
+# use k8s.namespace.name/pod/container (NOT kubernetes.*) or every export 400s
+# ("at least one label pair is required per stream") and data is dropped.
+# bench-lib adaptations for OTEL runs:
+#   - loki queries must use k8s_namespace_name (not kubernetes_namespace_name)
+#   - collector pod selection: otel-collector-collector-* pods
+#   - collector self-metrics: http://<pod-ip>:8888/metrics
+#     (otelcol_receiver_accepted_log_records / otelcol_exporter_sent_log_records)
+# FAIRNESS TODO vs vector: file_log skips .gz-rotated files (vector with PR
+# #3569 reads them); stanza UID regex needs [a-f0-9-]{32,36} (some pods have
+# 32-hex UIDs; a parse failure sends the entry UNLABELED -> Loki 400 -> dropped).
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel-collector
+  namespace: openshift-opentelemetry-collector
+spec:
+  mode: daemonset
+  # mirror vector collector pod limits for a fair comparison
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: "6"
+      memory: 2048Mi
+  securityContext:
+    seLinuxOptions:
+      type: spc_t
+    runAsUser: 0
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+  volumes:
+    - name: varlogpods
+      hostPath:
+        path: /var/log/pods
+  volumeMounts:
+    - name: varlogpods
+      mountPath: /var/log/pods
+      readOnly: true
+  config:
+    extensions:
+      bearertokenauth:
+        filename: /var/run/secrets/kubernetes.io/serviceaccount/token
+    receivers:
+      file_log:
+        include:
+          # bench scope only (vector's CLF application input collects all
+          # non-infra namespaces; keep the comparison on the loadgen load)
+          - /var/log/pods/loadgen*_*/*/*.log
+          - /var/log/pods/loadgen*_*/*/*.log.*
+        exclude:
+          - /var/log/pods/*/*/*.gz
+          - /var/log/pods/*/*/*.tmp
+        start_at: end
+        include_file_path: true
+        operators:
+          - type: regex_parser
+            id: parse_path
+            regex: '^/var/log/pods/(?P<namespace>[^_]+)_(?P<pod>.+)_(?P<uid>[a-f0-9-]{32,36})/(?P<container>[^/]+)/\d+\.log.*$'
+            parse_from: attributes["log.file.path"]
+          - type: move
+            from: attributes.namespace
+            to: resource["k8s.namespace.name"]
+          - type: move
+            from: attributes.pod
+            to: resource["k8s.pod.name"]
+          - type: move
+            from: attributes.container
+            to: resource["k8s.container.name"]
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 1800
+        spike_limit_mib: 300
+      k8s_attributes: {}
+      batch:
+        send_batch_size: 512
+        timeout: 1s
+    exporters:
+      otlp_http/loki:
+        endpoint: https://logging-loki-gateway-http.openshift-logging.svc:8080/api/logs/v1/application/otlp
+        tls:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+        auth:
+          authenticator: bearertokenauth
+    service:
+      extensions: [bearertokenauth]
+      pipelines:
+        logs:
+          receivers: [file_log]
+          processors: [memory_limiter, k8s_attributes, batch]
+          exporters: [otlp_http/loki]

@@ -1,0 +1,89 @@
+[12:13:42] drain gate: waiting for quiescence
+[12:14:18] drain: wal=5492Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:14:53] drain: wal=5492Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:15:28] drain: wal=5492Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:16:03] drain: wal=5492Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:16:38] drain: wal=5492Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:17:13] drain: wal=5492Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:17:49] drain: wal=5492Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:18:24] drain: wal=5492Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:18:59] drain: wal=567Mi collector_reads=0/s wal_ok=1 src_ok=1
+[12:18:59] drained
+deployment.apps/load-client patched
+[12:19:02] tag=p2_otel_n5 rate=20000 npods=5 perpod=4000: rolling out
+[12:20:06] generator log-rate sample: 4000/s per pod (target 4000; undercounts at high rates due to rotation)
+[12:20:06] warm-up 180s
+[12:23:06] steady state 600s
+[12:33:30] emitted cross-check: nominal=12000000 seq_delta=12288000 (2.4% off)
+[12:33:30] otel receiver records in window: 162555880
+[12:33:32] tag=p2_otel_n5 DONE: emitted=12000000 delivered=11991546 loss=0.07% cpu_med=166m cpu_max=177m mem_med=90Mi mem_max=104Mi
+[12:33:32] drain gate: waiting for quiescence
+[12:34:07] drain: wal=2662Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:34:42] drain: wal=2662Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:35:16] drain: wal=2662Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:35:51] drain: wal=2662Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:36:26] drain: wal=2662Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:37:00] drain: wal=2662Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:37:35] drain: wal=2662Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:38:10] drain: wal=2662Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:38:44] drain: wal=196Mi collector_reads=0/s wal_ok=1 src_ok=1
+[12:38:44] drained
+deployment.apps/load-client patched
+[12:38:47] tag=p2_otel_n10 rate=20000 npods=10 perpod=2000: rolling out
+[12:39:49] generator log-rate sample: 2066/s per pod (target 2000; undercounts at high rates due to rotation)
+[12:39:49] warm-up 180s
+[12:42:49] steady state 600s
+[12:53:11] emitted cross-check: nominal=12000000 seq_delta=12294000 (2.5% off)
+[12:53:11] otel receiver records in window: 179913253
+[12:53:13] tag=p2_otel_n10 DONE: emitted=12000000 delivered=11998389 loss=0.01% cpu_med=143m cpu_max=151m mem_med=103Mi mem_max=116Mi
+[12:53:13] drain gate: waiting for quiescence
+[12:53:49] drain: wal=2357Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:54:24] drain: wal=2508Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:54:58] drain: wal=2508Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:55:34] drain: wal=2508Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:56:09] drain: wal=2508Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:56:44] drain: wal=2508Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:57:19] drain: wal=2508Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:57:54] drain: wal=2508Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:58:29] drain: wal=2508Mi collector_reads=0/s wal_ok=0 src_ok=1
+[12:59:04] drain: wal=153Mi collector_reads=0/s wal_ok=1 src_ok=1
+[12:59:04] drained
+deployment.apps/load-client patched
+[12:59:07] tag=p2_otel_n20 rate=20000 npods=20 perpod=1000: rolling out
+[13:00:13] generator log-rate sample: 1000/s per pod (target 1000; undercounts at high rates due to rotation)
+[13:00:13] warm-up 180s
+[13:03:13] steady state 600s
+[13:13:43] emitted cross-check: nominal=12000000 seq_delta=17521980 (46.0% off)
+[13:13:44] otel receiver records in window: 197539640
+[13:13:46] tag=p2_otel_n20 DONE: emitted=12000000 delivered=12004364 loss=-0.04% cpu_med=149m cpu_max=156m mem_med=97Mi mem_max=105Mi
+[13:13:46] drain gate: waiting for quiescence
+[13:14:21] drain: wal=2766Mi collector_reads=0/s wal_ok=0 src_ok=1
+[13:14:56] drain: wal=2766Mi collector_reads=0/s wal_ok=0 src_ok=1
+[13:15:31] drain: wal=2766Mi collector_reads=0/s wal_ok=0 src_ok=1
+[13:16:05] drain: wal=2766Mi collector_reads=0/s wal_ok=0 src_ok=1
+[13:16:40] drain: wal=2766Mi collector_reads=0/s wal_ok=0 src_ok=1
+[13:17:16] drain: wal=2766Mi collector_reads=0/s wal_ok=0 src_ok=1
+[13:17:52] drain: wal=2766Mi collector_reads=0/s wal_ok=0 src_ok=1
+[13:18:27] drain: wal=2766Mi collector_reads=0/s wal_ok=0 src_ok=1
+[13:19:02] drain: wal=343Mi collector_reads=0/s wal_ok=1 src_ok=1
+[13:19:02] drained
+deployment.apps/load-client patched
+[13:19:20] tag=p2_otel_n40 rate=20000 npods=40 perpod=500: rolling out
+[13:20:22] generator log-rate sample: 500/s per pod (target 500; undercounts at high rates due to rotation)
+[13:20:22] warm-up 180s
+[13:23:22] steady state 600s
+[13:33:53] emitted cross-check: nominal=12000000 seq_delta=12402476 (3.4% off)
+[13:33:53] otel receiver records in window: 215290323
+[13:33:55] tag=p2_otel_n40 DONE: emitted=12000000 delivered=11999703 loss=0.00% cpu_med=150m cpu_max=162m mem_med=93Mi mem_max=99Mi
+=== fd release test (otel) ===
+steady-state fd counts:
+13:33:57,50,50
+13:34:13,50,50
+13:34:29,50,50
+13:34:45,50,50
+deleting all generator pods...
+deployment.apps/load-client scaled
+13:35:01,50,50
+13:35:18,10,12
+fds released after 18s
+fd release test complete: ./results/fd_release_otel.csv

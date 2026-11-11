@@ -1,0 +1,24 @@
+# RBAC for the OTEL collector's k8s_attributes processor (pods get/list/watch
+# cluster-wide). Without it the processor logs continuous "cannot list resource
+# pods" errors and cannot enrich entries.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-collector-k8sattributes
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otel-collector-k8sattributes
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: otel-collector-k8sattributes
+subjects:
+  - kind: ServiceAccount
+    name: otel-collector-collector
+    namespace: openshift-opentelemetry-collector

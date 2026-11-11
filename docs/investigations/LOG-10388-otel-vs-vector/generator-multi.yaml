@@ -1,0 +1,90 @@
+# Generator spread across 4 namespaces for multi-pipeline testing.
+# One deployment per namespace; scale replicas and rate per test scenario.
+# Rates are patched by bench-lib (set_generator_multi).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: loadgen0
+  labels: {kubernetes.io/metadata.name: loadgen0}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: loadgen1
+  labels: {kubernetes.io/metadata.name: loadgen1}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: loadgen2
+  labels: {kubernetes.io/metadata.name: loadgen2}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: loadgen3
+  labels: {kubernetes.io/metadata.name: loadgen3}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: load-client
+  namespace: loadgen0
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: load-client}}
+  template:
+    metadata: {labels: {app: load-client}}
+    spec:
+      containers:
+        - name: load-client
+          image: quay.io/openshift-logging/cluster-logging-load-client:latest
+          args: ["--synthetic-payload-size=512", "--log-format=default", "--logs-per-second=1000"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: load-client
+  namespace: loadgen1
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: load-client}}
+  template:
+    metadata: {labels: {app: load-client}}
+    spec:
+      containers:
+        - name: load-client
+          image: quay.io/openshift-logging/cluster-logging-load-client:latest
+          args: ["--synthetic-payload-size=512", "--log-format=default", "--logs-per-second=1000"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: load-client
+  namespace: loadgen2
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: load-client}}
+  template:
+    metadata: {labels: {app: load-client}}
+    spec:
+      containers:
+        - name: load-client
+          image: quay.io/openshift-logging/cluster-logging-load-client:latest
+          args: ["--synthetic-payload-size=512", "--log-format=default", "--logs-per-second=1000"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: load-client
+  namespace: loadgen3
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: load-client}}
+  template:
+    metadata: {labels: {app: load-client}}
+    spec:
+      containers:
+        - name: load-client
+          image: quay.io/openshift-logging/cluster-logging-load-client:latest
+          args: ["--synthetic-payload-size=512", "--log-format=default", "--logs-per-second=1000"]
