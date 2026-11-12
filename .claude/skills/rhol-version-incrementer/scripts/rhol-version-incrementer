@@ -10,6 +10,7 @@
 #   component: operator | cluster-logging-operator | clo
 #              lfme | log-file-metric-exporter
 #              eventrouter
+#              loki | loki-operator
 #   target-version: optional; defaults to current patch version + 1
 #   repo-path: optional; defaults to <workspace>/<canonical-repo-name>
 #   --dry-run: print planned edits without modifying files
@@ -50,8 +51,9 @@ case "$COMPONENT" in
   operator|cluster-logging-operator|clo)  SCRIPT="$SCRIPT_DIR/bump-operator.sh" ;;
   lfme|log-file-metric-exporter)          SCRIPT="$SCRIPT_DIR/bump-lfme.sh" ;;
   eventrouter)                            SCRIPT="$SCRIPT_DIR/bump-eventrouter.sh" ;;
+  loki|loki-operator)                     SCRIPT="$SCRIPT_DIR/bump-loki-operator.sh" ;;
   *)
-    echo "ERROR: unknown component '$COMPONENT' (expected operator|lfme|eventrouter)" >&2; exit 1 ;;
+    echo "ERROR: unknown component '$COMPONENT' (expected operator|lfme|eventrouter|loki)" >&2; exit 1 ;;
 esac
 
 exec bash "$SCRIPT" "${POSITIONAL[@]+"${POSITIONAL[@]}"}"

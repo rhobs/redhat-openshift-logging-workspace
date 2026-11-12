@@ -29,7 +29,9 @@ if [[ "${PR_STANDALONE:-0}" != 1 ]]; then
   [[ -d "$REPO_PATH" ]] || { echo "ERROR: repo path not found: $REPO_PATH" >&2; exit 1; }
 
   # --- determine current version from Dockerfile.art -------------------------
-  ART_FILE="$REPO_PATH/Dockerfile.art"
+  # Components whose files live in a subdirectory (loki-operator: operator/)
+  # set ART_RELATIVE before sourcing this library.
+  ART_FILE="$REPO_PATH/${ART_RELATIVE:-Dockerfile.art}"
   [[ -f "$ART_FILE" ]] || { echo "ERROR: $ART_FILE not found" >&2; exit 1; }
 
   CURRENT_VERSION="$(sed -n 's/.*version="'"$PREFIX"'\([0-9]*\.[0-9]*\.[0-9]*\)".*/\1/p' "$ART_FILE" | tail -1)"
