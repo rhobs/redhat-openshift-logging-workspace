@@ -49,7 +49,9 @@ if [[ "${PR_STANDALONE:-0}" != 1 ]]; then
   CATALOG_API="https://catalog.redhat.com/api/containers/v1/repositories/registry/registry.access.redhat.com/repository/$CATALOG_REPO/tag"
 
   catalog_total() {
-    curl -sf "$CATALOG_API/$PREFIX$1" | python3 -c "import json,sys; print(json.load(sys.stdin)['total'])" 2>/dev/null || echo "error"
+    # Catalog tags are ALWAYS v-prefixed, even when the repo version is not
+    # (CLO's Dockerfile.art says 6.5.4 but the published tag is v6.5.4).
+    curl -sf "$CATALOG_API/v$1" | python3 -c "import json,sys; print(json.load(sys.stdin)['total'])" 2>/dev/null || echo "error"
   }
 
   CURRENT_TOTAL="$(catalog_total "$CURRENT_VERSION")"
