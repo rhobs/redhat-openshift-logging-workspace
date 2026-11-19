@@ -103,20 +103,29 @@ Create via `createJiraIssue` in project ART:
 
 - **Summary:** `Release Logging <version> [<release date>]` — date format `YYYY-Mmm-DD`, e.g.
   `Release Logging 6.6.1 [2026-Sep-10]`
-- **Type:** Story; **Labels:** `art:release:schedule`
+- **Type:** Story; **Priority:** Normal; **Labels:** `art:release:schedule`
+- **Components:** `daily-ops`, `Release work`
+- **Activity Type** (custom field): `Incidents & Support`
 - **Description:** the ART-14539 template description with:
   - **GROUP** filled in: `logging-<major.minor>` (the ocp-build-data branch, e.g. `logging-6.5`)
   - **ASSEMBLY** filled in: `<version>` (e.g. `6.5.2`)
   - **Build Information** and **JIRA issues** sections left as template placeholders — they are
     filled in later once builds and the shipping issue list are known
-- **Due date** = Release Date (matches ART-21925; ART needs 5 working days lead time)
 - **Reporter** = the user: pass the user's accountId (from `atlassianUserInfo`) as the `reporter`
   on `createJiraIssue`. If the create call rejects the reporter field, retry without it and then
   set it via `editJiraIssue` with `additional_fields: {"reporter": {"accountId": "..."}}`.
 
-Then link it to the LOG issue created above: a **Related** link, direction "is related to", from
-the ART issue to the LOG issue. Use `discover` to find the issue-link create operation
-(e.g. "link two jira issues").
+**Never pass `duedate` to `createJiraIssue`** — it is rejected with `INVALID_FIELD_VALUE` in both
+the LOG and ART projects. Set it after creation via `editJiraIssue`
+(`{"duedate": "YYYY-MM-DD"}`): for the ART issue, Due date = Release Date (matches ART-21925;
+ART needs 5 working days lead time).
+
+After creation, add **two** links (use `discover` to find the issue-link create operation,
+e.g. "link two jira issues"):
+
+- a **Cloners** link ("clones") from the ART issue to template **ART-14539** — a real Jira clone
+  carries this; it is not created automatically
+- a **Related** link, direction "is related to", from the ART issue to the LOG issue
 
 ### 6a. Fill the ART issue's JIRA issues list (later, near code freeze)
 
