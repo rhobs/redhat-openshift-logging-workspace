@@ -12,7 +12,7 @@ argument-hint: '6.2.13'
 
 ## Overview
 
-Audits JIRA issues for an upcoming OpenShift Logging release to verify readiness for QE, proper release note configuration, sprint assignment, and `/hold` labels on open PRs prior to code-freeze.
+Audits JIRA issues for an upcoming OpenShift Logging release to verify readiness for QE, proper release note configuration, sprint assignment, and `/hold` labels on open PRs prior to code-freeze. Flagged issues are triaged interactively — the user decides how each is resolved — before the final report is produced, and the surviving list can be written into the ART release issue.
 
 ---
 
@@ -29,11 +29,17 @@ If target version is not provided, prompt the user (e.g., `6.2.13` or `6.2.z`).
     - Stream `X.Y.z` (e.g., `6.2.z`) -> `"Logging X.Y.z"`
 3. If input cannot be parsed into `X.Y.Z` or `X.Y.z`, prompt user for clarification before proceeding.
 
-**JQL Query:**
+**JQL Query (release candidate list):**
 ```text
-project = "OpenShift Logging" AND type in (Bug, Task, Story, Vulnerability, Weakness) AND status not in (New, "To Do", Assigned, "In Progress") AND resolution is EMPTY AND fixVersion in (<TARGET_VERSIONS>) ORDER BY key ASC
+project = LOG AND fixVersion in (<TARGET_VERSIONS>) AND status not in (New, "To Do", Assigned, Post, "Code Review", "In Progress") ORDER BY issuetype, key
 ```
-*(Note: `resolution is EMPTY` correctly targets all unresolved issues).*
+*(Pre-built queries are also available as links in the z-stream triage doc.)*
+
+**Supplementary JQL (code-freeze hold check):** Post / Code Review issues are excluded from the
+candidate list above, but their open PRs still need a `/hold` to avoid merging during code-freeze:
+```text
+project = LOG AND fixVersion in (<TARGET_VERSIONS>) AND status in (Post, "Code Review") AND resolution is EMPTY ORDER BY key ASC
+```
 
 ---
 
@@ -86,7 +92,8 @@ Evaluate each retrieved issue against the following rules (status matches are ca
 - **Release Notes:** Must satisfy at least ONE of:
     - Non-empty RN Text (`customfield_10783`) AND RN Type is set, OR
     - Contains `no-rn` label, OR
-    - RN Type equals `"Release Note Not Required"`.
+    - RN Type equals `"Release Note Not Required"` — in this case also suggest adding the `no-rn`
+      label so the issue is easier to search for.
 - **Rule:** Flag in **Section 4** if none of the above are met.
 
 #### 3. Status Check
@@ -105,7 +112,7 @@ Issues must be ready for QE pickup or already QE'd:
 - **Rule:** Flag in **Section 6** if private without `no-rn` or public clone. Remediation: Create public issue first, clone from it, and assign release notes to the clone.
 
 #### 5. GitHub PR Hold Check (`CODE REVIEW` or `POST` issues)
-For flagged issues in `CODE REVIEW` or `POST`:
+For issues from the supplementary JQL (and any flagged in `CODE REVIEW` or `POST`):
 1. Call `mcp__atlassian__getJiraIssueRemoteIssueLinks` per issue.
 2. Extract URLs matching `https://github.com/[^/]+/[^/]+/pull/\d+`.
 3. If no GitHub PR is linked, flag: `"No linked PR found for issue in Code Review/POST"`.
@@ -125,7 +132,24 @@ For flagged issues in `CODE REVIEW` or `POST`:
 
 ---
 
-### Step 4: Generate & Save Audit Report
+### Step 4: Interactive Triage — Ask the User How to Resolve Not-Ready Issues
+
+Before writing the report, present every flagged issue (Sections 2, 4, 5, 6, 7) to the user and
+**ask how to resolve each one** — do not guess intent and do not auto-fix. Batch related issues
+into one `AskUserQuestion` round (up to 4 questions per round) and offer per-issue options such as:
+
+- **Fix in Jira** — set the missing RN type/text, add the `no-rn` label, transition the status
+  (e.g. Code Review → Modified once PR merges), move to the current sprint
+- **Add `/hold`** — apply `do-not-merge/hold` to the linked open PR via `gh pr edit --add-label`
+- **Exclude from release** — remove the fix version so it drops out of the candidate list
+- **Contact assignee** — leave flagged; the user follows up out-of-band
+- **Leave as-is** — keep the flag in the report
+
+Most inconsistencies can be resolved by looking at the issue and inferring the intent; when the
+intent is unclear, the answer is to reach out to the assignee, not to guess. Apply only the fixes
+the user chooses, then re-query the affected issues to confirm the flag clears.
+
+### Step 5: Generate & Save Audit Report
 
 1. Write the full Markdown report to file: `RELEASE_AUDIT_<VERSION>.md` (e.g., `RELEASE_AUDIT_6.2.13.md`).
 2. Provide clickable Jira bulk query links for any non-empty flagged section:
