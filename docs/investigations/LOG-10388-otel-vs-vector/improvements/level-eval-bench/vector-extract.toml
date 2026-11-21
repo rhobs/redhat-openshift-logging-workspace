@@ -1,0 +1,188 @@
+# LOG-10547 benchmark: native extract_pattern transform.
+# The rule list models the CLO's five-stage VRL level cascade as ordered
+# (pattern, value) rules:
+#   attempt 1 (logfmt)  -> rules 1-10   (level=<word> token)
+#   attempt 2 (klog)    -> rules 11-14  (klog severity prefix)
+#   attempt 3 (grok)    -> rules 15-25  (TIMESTAMP LEVEL message)
+#   attempt 4 (structured patterns) -> rules 26-34
+#   attempt 5 (keyword) -> rules 35-44
+# Known semantic difference vs VRL: attempt 5 in VRL picks the keyword that
+# appears EARLIEST in the message; ordered rules pick by severity priority.
+data_dir = "/var/lib/vector/bench"
+
+[sources.in]
+type = "file"
+include = ["/bench/corpus/*.log"]
+read_from = "beginning"
+glob_minimum_cooldown_ms = 1000
+max_line_bytes = 104857600
+ignore_checkpoints = true
+
+[transforms.lvl]
+type = "extract_pattern"
+inputs = ["in"]
+# plain path (not "{{ message }}"): read by reference, no per-event render
+field = "message"
+target = "level"
+default = "default"
+
+# ---- attempt 1: logfmt level= token (mirrors parse_logfmt + downcase) ----
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:^|\s)level="?emergency'
+value = "emergency"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:^|\s)level="?alert'
+value = "alert"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:^|\s)level="?critical'
+value = "critical"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:^|\s)level="?error'
+value = "error"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:^|\s)level="?warning'
+value = "warning"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:^|\s)level="?warn'
+value = "warn"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:^|\s)level="?notice'
+value = "notice"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:^|\s)level="?info'
+value = "info"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:^|\s)level="?debug'
+value = "debug"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:^|\s)level="?trace'
+value = "trace"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:^|\s)level="?fatal'
+value = "fatal"
+
+# ---- attempt 2: klog severity prefix (mirrors parse_klog letter mapping) ----
+[[transforms.lvl.rules]]
+pattern = '^\s*I\d{4}\s\d{2}:\d{2}:\d{2}\.\d{6}\s+\d+\s\S+:\d+\]\s'
+value = "info"
+[[transforms.lvl.rules]]
+pattern = '^\s*W\d{4}\s\d{2}:\d{2}:\d{2}\.\d{6}\s+\d+\s\S+:\d+\]\s'
+value = "warning"
+[[transforms.lvl.rules]]
+pattern = '^\s*E\d{4}\s\d{2}:\d{2}:\d{2}\.\d{6}\s+\d+\s\S+:\d+\]\s'
+value = "error"
+[[transforms.lvl.rules]]
+pattern = '^\s*F\d{4}\s\d{2}:\d{2}:\d{2}\.\d{6}\s+\d+\s\S+:\d+\]\s'
+value = "fatal"
+
+# ---- attempt 3: classic text TIMESTAMP LEVEL message (mirrors grok) ----
+[[transforms.lvl.rules]]
+pattern = '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+(?i:EMERGENCY)\s'
+value = "emergency"
+[[transforms.lvl.rules]]
+pattern = '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+(?i:ALERT)\s'
+value = "alert"
+[[transforms.lvl.rules]]
+pattern = '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+(?i:CRITICAL)\s'
+value = "critical"
+[[transforms.lvl.rules]]
+pattern = '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+(?i:ERROR)\s'
+value = "error"
+[[transforms.lvl.rules]]
+pattern = '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+(?i:ERR)\s'
+value = "error"
+[[transforms.lvl.rules]]
+pattern = '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+(?i:WARNING)\s'
+value = "warning"
+[[transforms.lvl.rules]]
+pattern = '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+(?i:WARN)\s'
+value = "warn"
+[[transforms.lvl.rules]]
+pattern = '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+(?i:NOTICE)\s'
+value = "notice"
+[[transforms.lvl.rules]]
+pattern = '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+(?i:INFO)\s'
+value = "info"
+[[transforms.lvl.rules]]
+pattern = '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+(?i:DEBUG)\s'
+value = "debug"
+[[transforms.lvl.rules]]
+pattern = '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+(?i:TRACE)\s'
+value = "trace"
+[[transforms.lvl.rules]]
+pattern = '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+(?i:FATAL)\s'
+value = "fatal"
+[[transforms.lvl.rules]]
+pattern = '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+(?i:SEVERE)\s'
+value = "severe"
+[[transforms.lvl.rules]]
+pattern = '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s+(?i:EMERG(?:ENCY)?)\s'
+value = "emergency"
+
+# ---- attempt 4: well known structured patterns (verbatim from the VRL) ----
+[[transforms.lvl.rules]]
+pattern = '^EM[0-9]+|(?i:level=emergency|Value:emergency|"level":"emergency")'
+value = "emergency"
+[[transforms.lvl.rules]]
+pattern = '^A[0-9]+|(?i:level=alert|Value:alert|"level":"alert")'
+value = "alert"
+[[transforms.lvl.rules]]
+pattern = '^C[0-9]+|(?i:level=critical|Value:critical|"level":"critical")'
+value = "critical"
+[[transforms.lvl.rules]]
+pattern = '^E[0-9]+|(?i:level=error|Value:error|"level":"error")'
+value = "error"
+[[transforms.lvl.rules]]
+pattern = '^W[0-9]+|(?i:level=warn|Value:warn|"level":"warn")'
+value = "warn"
+[[transforms.lvl.rules]]
+pattern = '^N[0-9]+|(?i:level=notice|Value:notice|"level":"notice")'
+value = "notice"
+[[transforms.lvl.rules]]
+pattern = '^I[0-9]+|(?i:level=info|Value:info|"level":"info")'
+value = "info"
+[[transforms.lvl.rules]]
+pattern = '^D[0-9]+|(?i:level=debug|Value:debug|"level":"debug")'
+value = "debug"
+[[transforms.lvl.rules]]
+pattern = '^T[0-9]+|(?i:level=trace|Value:trace|"level":"trace")'
+value = "trace"
+
+# ---- attempt 5: keyword scan (VRL picks earliest; rules pick by priority) ----
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:emergency|<emergency>)'
+value = "emergency"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:alert|<alert>)'
+value = "alert"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:critical|<critical>)'
+value = "critical"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:error|<error>)'
+value = "error"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:warn(?:ing)?|<warn>)'
+value = "warn"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:notice|<notice>)'
+value = "notice"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:\binfo\b|<info>)'
+value = "info"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:debug|<debug>)'
+value = "debug"
+[[transforms.lvl.rules]]
+pattern = '(?i)(?:trace|<trace>)'
+value = "trace"
+
+[sinks.out]
+type = "file"
+inputs = ["lvl"]
+path = "/bench/out/result.log"
+encoding.codec = "json"
+
+[sinks.out.buffer]
+type = "memory"
+max_events = 100000

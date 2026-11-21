@@ -1,0 +1,27 @@
+apiVersion: loki.grafana.com/v1
+kind: LokiStack
+metadata:
+  name: logging-loki
+  namespace: openshift-logging
+spec:
+  size: 1x.demo
+  storage:
+    schemas:
+      - version: v13
+        effectiveDate: "2026-01-01"
+    secret:
+      name: test
+      type: s3
+  storageClassName: gp3-csi
+  replicationFactor: 1
+  limits:
+    global:
+      ingestion:
+        ingestionRate: 200
+        ingestionBurstSize: 400
+        maxGlobalStreamsPerTenant: 100000
+        perStreamRateLimit: 20
+        perStreamRateLimitBurst: 40
+        perStreamDesiredRate: 20
+  tenants:
+    mode: openshift-logging

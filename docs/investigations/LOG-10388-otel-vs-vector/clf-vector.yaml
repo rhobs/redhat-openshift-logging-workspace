@@ -1,0 +1,133 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: logcollector
+  namespace: openshift-logging
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: logcollector-sa-token
+  namespace: openshift-logging
+  annotations:
+    kubernetes.io/service-account.name: logcollector
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: logcollector-application
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: collect-application-logs
+subjects:
+  - kind: ServiceAccount
+    name: logcollector
+    namespace: openshift-logging
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: logcollector-infra-logs
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: collect-infrastructure-logs
+subjects:
+  - kind: ServiceAccount
+    name: logcollector
+    namespace: openshift-logging
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: logcollector-audit
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: collect-audit-logs
+subjects:
+  - kind: ServiceAccount
+    name: logcollector
+    namespace: openshift-logging
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: logcollector-application-write
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-logging-write-application-logs
+subjects:
+  - kind: ServiceAccount
+    name: logcollector
+    namespace: openshift-logging
+---
+apiVersion: observability.openshift.io/v1
+kind: ClusterLogForwarder
+metadata:
+  name: collector
+  namespace: openshift-logging
+spec:
+  collector:
+    type: vector
+  serviceAccount:
+    name: logcollector
+  outputs:
+    - name: loki-stack
+      type: lokiStack
+      lokiStack:
+        authentication:
+          token:
+            from: serviceAccount
+        target:
+          namespace: openshift-logging
+          name: logging-loki
+      tls:
+        ca:
+          key: service-ca.crt
+          configMapName: openshift-service-ca.crt
+  pipelines:
+    - name: app-to-loki
+      inputRefs:
+        - application
+      outputRefs:
+        - loki-stack
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-logging-read-application-logs
+rules:
+  - apiGroups: ["loki.grafana.com"]
+    resources: ["application"]
+    resourceNames: ["logs"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: logcollector-application-read
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-logging-read-application-logs
+subjects:
+  - kind: ServiceAccount
+    name: logcollector
+    namespace: openshift-logging
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: logcollector-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-logging-operator-metrics-reader
+subjects:
+  - kind: ServiceAccount
+    name: logcollector
+    namespace: openshift-logging

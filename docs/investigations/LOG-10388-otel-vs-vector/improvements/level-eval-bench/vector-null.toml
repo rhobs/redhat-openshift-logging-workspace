@@ -1,0 +1,24 @@
+# LOG-10547 benchmark: VRL baseline.
+# The level-detection program is the exact VRL emitted by the CLO's viaq
+# filter (see cluster-logging-operator generated configs), adapted only to
+# read .message and write .level (the real pipeline reads/writes them under
+# ._internal, which does not change evaluation cost).
+data_dir = "/var/lib/vector/bench"
+
+[sources.in]
+type = "file"
+include = ["/bench/corpus/*.log"]
+read_from = "beginning"
+glob_minimum_cooldown_ms = 1000
+max_line_bytes = 104857600
+ignore_checkpoints = true
+
+[sinks.out]
+type = "file"
+inputs = ["in"]
+path = "/bench/out/result.log"
+encoding.codec = "json"
+
+[sinks.out.buffer]
+type = "memory"
+max_events = 100000

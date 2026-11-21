@@ -1,0 +1,109 @@
+[10:19:34] drain gate: waiting for quiescence
+[10:20:09] drain: wal=5Mi collector_reads=0/s wal_ok=1 src_ok=1
+[10:20:09] drained
+deployment.apps/load-client patched
+[10:20:12] tag=p1_otel_2500 rate=2500 npods=1 perpod=2500: rolling out
+[10:21:15] generator log-rate sample: 2500/s per pod (target 2500; undercounts at high rates due to rotation)
+[10:21:15] warm-up 180s
+[10:24:15] steady state 600s
+[10:34:34] emitted cross-check: nominal=1500000 seq_delta=1530000 (2.0% off)
+[10:34:35] otel receiver records in window: 4439065
+[10:34:36] tag=p1_otel_2500 DONE: emitted=1500000 delivered=1500499 loss=-0.03% cpu_med=31m cpu_max=33m mem_med=67Mi mem_max=70Mi
+check saturation: loss=-0.03 cpu_max=33 mem_max=70
+[10:34:36] drain gate: waiting for quiescence
+[10:35:11] drain: wal=396Mi collector_reads=0/s wal_ok=1 src_ok=1
+[10:35:11] drained
+deployment.apps/load-client patched
+[10:35:14] tag=p1_otel_5000 rate=5000 npods=1 perpod=5000: rolling out
+[10:36:19] generator log-rate sample: 5333/s per pod (target 5000; undercounts at high rates due to rotation)
+[10:36:19] warm-up 180s
+[10:39:19] steady state 600s
+[10:49:43] emitted cross-check: nominal=3000000 seq_delta=3080000 (2.7% off)
+[10:49:43] otel receiver records in window: 8802461
+[10:49:45] tag=p1_otel_5000 DONE: emitted=3000000 delivered=3000685 loss=-0.02% cpu_med=60m cpu_max=65m mem_med=70Mi mem_max=74Mi
+check saturation: loss=-0.02 cpu_max=65 mem_max=74
+[10:49:45] drain gate: waiting for quiescence
+[10:50:20] drain: wal=805Mi collector_reads=0/s wal_ok=1 src_ok=1
+[10:50:20] drained
+deployment.apps/load-client patched
+[10:50:23] tag=p1_otel_10000 rate=10000 npods=2 perpod=5000: rolling out
+[10:51:26] generator log-rate sample: 5166/s per pod (target 5000; undercounts at high rates due to rotation)
+[10:51:26] warm-up 180s
+[10:54:26] steady state 600s
+[11:04:42] emitted cross-check: nominal=6000000 seq_delta=6080000 (1.3% off)
+[11:04:42] otel receiver records in window: 17424574
+[11:04:44] tag=p1_otel_10000 DONE: emitted=6000000 delivered=5991507 loss=0.14% cpu_med=63m cpu_max=66m mem_med=73Mi mem_max=78Mi
+check saturation: loss=0.14 cpu_max=66 mem_max=78
+[11:04:44] drain gate: waiting for quiescence
+[11:05:18] drain: wal=1601Mi collector_reads=0/s wal_ok=1 src_ok=1
+[11:05:18] drained
+deployment.apps/load-client patched
+[11:05:20] tag=p1_otel_20000 rate=20000 npods=4 perpod=5000: rolling out
+[11:06:24] generator log-rate sample: 5166/s per pod (target 5000; undercounts at high rates due to rotation)
+[11:06:24] warm-up 180s
+[11:09:24] steady state 600s
+[11:32:07] emitted cross-check: nominal=12000000 seq_delta=26790000 (123.2% off)
+[11:32:07] otel receiver records in window: 49603957
+[11:32:09] tag=p1_otel_20000 DONE: emitted=12000000 delivered=12003170 loss=-0.03% cpu_med=132m cpu_max=143m mem_med=86Mi mem_max=99Mi
+check saturation: loss=-0.03 cpu_max=143 mem_max=99
+[11:32:09] drain gate: waiting for quiescence
+[11:32:44] drain: wal=4341Mi collector_reads=0/s wal_ok=0 src_ok=1
+[11:33:19] drain: wal=4341Mi collector_reads=0/s wal_ok=0 src_ok=1
+[11:33:53] drain: wal=1877Mi collector_reads=0/s wal_ok=1 src_ok=1
+[11:33:53] drained
+deployment.apps/load-client patched
+[11:33:55] tag=p1_otel_40000 rate=40000 npods=8 perpod=5000: rolling out
+[11:34:59] generator log-rate sample: 5333/s per pod (target 5000; undercounts at high rates due to rotation)
+[11:34:59] warm-up 180s
+[11:37:59] steady state 600s
+Unable to connect to the server: dial tcp: lookup api.mrxb8-ifrxy-6ij.oso1.p3.openshiftapps.com: no such host
+[11:52:16] emitted cross-check: nominal=24000000 seq_delta=-10049992 (141.9% off)
+[11:52:16] otel receiver records in window: 0
+[11:52:16] tag=p1_otel_40000 DONE: emitted=24000000 delivered=0 loss=100.00% cpu_med=282m cpu_max=295m mem_med=100Mi mem_max=109Mi
+check saturation: loss=100.00 cpu_max=295 mem_max=109
+SATURATED: loss 100.00% > 1.0%
+final drain before delivered re-query
+[11:52:16] drain gate: waiting for quiescence
+Unable to connect to the server: dial tcp: lookup api.mrxb8-ifrxy-6ij.oso1.p3.openshiftapps.com: no such host
+[11:52:53] drain: wal=Mi collector_reads=3171070/s wal_ok=0 src_ok=0
+[11:53:29] drain: wal=9339Mi collector_reads=42849/s wal_ok=0 src_ok=0
+[11:54:04] drain: wal=5291Mi collector_reads=42850/s wal_ok=0 src_ok=0
+[11:54:39] drain: wal=5829Mi collector_reads=42998/s wal_ok=0 src_ok=0
+[11:55:14] drain: wal=6372Mi collector_reads=43073/s wal_ok=0 src_ok=0
+[11:55:50] drain: wal=6913Mi collector_reads=43251/s wal_ok=0 src_ok=0
+[11:56:25] drain: wal=7455Mi collector_reads=43170/s wal_ok=0 src_ok=0
+[11:56:59] drain: wal=7990Mi collector_reads=42843/s wal_ok=0 src_ok=0
+[11:57:34] drain: wal=8525Mi collector_reads=42728/s wal_ok=0 src_ok=0
+[11:58:09] drain: wal=9056Mi collector_reads=42887/s wal_ok=0 src_ok=0
+[11:58:43] drain: wal=4676Mi collector_reads=42974/s wal_ok=0 src_ok=0
+[11:59:18] drain: wal=5517Mi collector_reads=42684/s wal_ok=0 src_ok=0
+[11:59:54] drain: wal=6045Mi collector_reads=44567/s wal_ok=0 src_ok=0
+[12:00:29] drain: wal=6601Mi collector_reads=43132/s wal_ok=0 src_ok=0
+[12:01:04] drain: wal=7136Mi collector_reads=42678/s wal_ok=0 src_ok=0
+[12:01:38] drain: wal=7673Mi collector_reads=43118/s wal_ok=0 src_ok=0
+[12:02:14] drain: wal=8209Mi collector_reads=42846/s wal_ok=0 src_ok=0
+[12:02:49] drain: wal=8756Mi collector_reads=43010/s wal_ok=0 src_ok=0
+[12:03:24] drain: wal=9292Mi collector_reads=42855/s wal_ok=0 src_ok=0
+[12:03:59] drain: wal=4892Mi collector_reads=42854/s wal_ok=0 src_ok=0
+[12:04:34] drain: wal=5738Mi collector_reads=42679/s wal_ok=0 src_ok=0
+[12:05:09] drain: wal=6275Mi collector_reads=42846/s wal_ok=0 src_ok=0
+[12:05:44] drain: wal=6815Mi collector_reads=42842/s wal_ok=0 src_ok=0
+[12:06:19] drain: wal=7357Mi collector_reads=42843/s wal_ok=0 src_ok=0
+[12:06:54] drain: wal=7890Mi collector_reads=43010/s wal_ok=0 src_ok=0
+[12:07:30] drain: wal=8439Mi collector_reads=42864/s wal_ok=0 src_ok=0
+[12:08:05] drain: wal=8976Mi collector_reads=42983/s wal_ok=0 src_ok=0
+[12:08:40] drain: wal=4588Mi collector_reads=43217/s wal_ok=0 src_ok=0
+[12:09:15] drain: wal=5438Mi collector_reads=43015/s wal_ok=0 src_ok=0
+[12:09:50] drain: wal=5986Mi collector_reads=42847/s wal_ok=0 src_ok=0
+[12:10:25] drain: wal=6523Mi collector_reads=42846/s wal_ok=0 src_ok=0
+[12:11:01] drain: wal=7060Mi collector_reads=43509/s wal_ok=0 src_ok=0
+[12:11:36] drain: wal=7610Mi collector_reads=42675/s wal_ok=0 src_ok=0
+[12:12:11] drain: wal=8148Mi collector_reads=43009/s wal_ok=0 src_ok=0
+[12:12:46] drain: wal=8689Mi collector_reads=42846/s wal_ok=0 src_ok=0
+[12:12:46] drain gate timed out; continuing anyway
+finalized p1_otel_10000: delivered=5991507 loss=0.14%
+finalized p1_otel_20000: delivered=12003170 loss=-0.03%
+finalized p1_otel_2500: delivered=1500499 loss=-0.03%
+finalized p1_otel_40000: delivered=24005351 loss=-0.02%
+finalized p1_otel_5000: delivered=3000685 loss=-0.02%
+Phase 1 OTEL ladder complete. See ./results/summary.csv

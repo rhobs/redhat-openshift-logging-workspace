@@ -1,0 +1,109 @@
+# Multi-pipeline CLF: N parallel application inputs (one per loadgen namespace),
+# each with its own pipeline and lokiStack output. Works around the single-task
+# kubernetes_logs source + sink chokepoint (LOG-10183) so Vector can use more CPU.
+# RBAC (SA, token, rolebindings) is identical to clf-vector.yaml — apply that first.
+apiVersion: observability.openshift.io/v1
+kind: ClusterLogForwarder
+metadata:
+  name: collector-multi
+  namespace: openshift-logging
+spec:
+  collector:
+    type: vector
+  serviceAccount:
+    name: logcollector
+  inputs:
+    - name: app-0
+      type: application
+      application:
+        includes:
+          - namespace: loadgen0
+    - name: app-1
+      type: application
+      application:
+        includes:
+          - namespace: loadgen1
+    - name: app-2
+      type: application
+      application:
+        includes:
+          - namespace: loadgen2
+    - name: app-3
+      type: application
+      application:
+        includes:
+          - namespace: loadgen3
+  outputs:
+    - name: loki-0
+      type: lokiStack
+      lokiStack:
+        authentication:
+          token:
+            from: serviceAccount
+        target:
+          namespace: openshift-logging
+          name: logging-loki
+      tls:
+        ca:
+          key: service-ca.crt
+          configMapName: openshift-service-ca.crt
+    - name: loki-1
+      type: lokiStack
+      lokiStack:
+        authentication:
+          token:
+            from: serviceAccount
+        target:
+          namespace: openshift-logging
+          name: logging-loki
+      tls:
+        ca:
+          key: service-ca.crt
+          configMapName: openshift-service-ca.crt
+    - name: loki-2
+      type: lokiStack
+      lokiStack:
+        authentication:
+          token:
+            from: serviceAccount
+        target:
+          namespace: openshift-logging
+          name: logging-loki
+      tls:
+        ca:
+          key: service-ca.crt
+          configMapName: openshift-service-ca.crt
+    - name: loki-3
+      type: lokiStack
+      lokiStack:
+        authentication:
+          token:
+            from: serviceAccount
+        target:
+          namespace: openshift-logging
+          name: logging-loki
+      tls:
+        ca:
+          key: service-ca.crt
+          configMapName: openshift-service-ca.crt
+  pipelines:
+    - name: app-0-to-loki
+      inputRefs:
+        - app-0
+      outputRefs:
+        - loki-0
+    - name: app-1-to-loki
+      inputRefs:
+        - app-1
+      outputRefs:
+        - loki-1
+    - name: app-2-to-loki
+      inputRefs:
+        - app-2
+      outputRefs:
+        - loki-2
+    - name: app-3-to-loki
+      inputRefs:
+        - app-3
+      outputRefs:
+        - loki-3

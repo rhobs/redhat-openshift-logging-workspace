@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: querycli
+  namespace: openshift-logging
+spec:
+  containers:
+  - name: querycli
+    image: quay.io/curl/curl:latest
+    command: ["sleep", "infinity"]

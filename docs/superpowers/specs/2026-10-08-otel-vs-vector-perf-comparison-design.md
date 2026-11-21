@@ -179,3 +179,14 @@ Results presented as comparison tables per scenario:
 
 Each metric reported as **median (min–max)** across 3 runs. No pass/fail thresholds —
 the team interprets the data.
+
+## Results
+
+Executed 2026-11-05 → 2026-11-06 (single run per rate; medians pending a repeat
+campaign). Full data, scripts, and deployment deltas:
+[`docs/investigations/LOG-10388-otel-vs-vector/`](../../investigations/LOG-10388-otel-vs-vector/README.md).
+
+Headline: both collectors deliver ≈100% up to 20k lines/s. At 40k/s Vector loses
+29% (single) / 53% (multi) while OTEL delivers 100% at ~1/9th the CPU; OTEL uses
+6–15× less CPU and memory at every rate; fan-in (5→40 containers) flat for both;
+fds release in 18s for both.
